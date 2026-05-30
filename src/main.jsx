@@ -40,7 +40,7 @@ const defaultApartments = [
   {
     id: "two-bedroom-1",
     name: { en: "Suite A", es: "Suite A" },
-    type: { en: "2 bedrooms, 3 beds", es: "2 recamaras, 3 camas" },
+    type: { en: "2 bedrooms, 4 beds", es: "2 recamaras, 4 camas" },
     totalUnits: 1,
     price: "$1,500 MXN",
     discountPrice: "",
@@ -54,7 +54,7 @@ const defaultApartments = [
   {
     id: "two-bedroom-2",
     name: { en: "Suite B", es: "Suite B" },
-    type: { en: "2 bedrooms, 3 beds", es: "2 recamaras, 3 camas" },
+    type: { en: "2 bedrooms, 4 beds", es: "2 recamaras, 4 camas" },
     totalUnits: 1,
     price: "$1,500 MXN",
     discountPrice: "",
