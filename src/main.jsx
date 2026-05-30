@@ -23,7 +23,8 @@ const WHATSAPP_NUMBER = "523891052106";
 const ADMIN_PIN = "2468";
 const BUSINESS_EMAIL = "tecualasuites@icloud.com";
 // Paste the deployed Google Apps Script web-app URL here after setup.
-const SHARED_BOOKINGS_URL = "";
+const SHARED_BOOKINGS_URL =
+  "https://script.google.com/macros/s/AKfycbyGZ9bW29_Xv3PEHiA6TB04CyKfXtf3Hcx4qqIrmOy7EohpNE-86sQasbh8YXr2GIRQfQ/exec";
 const BUSINESS_ADDRESS =
   "Luis Donaldo Colosio Murrieta Nte. 389 A, entre Ninos Heroes Oriente, Vicente Guerrero, 63450 Tecuala, Nay., Mexico";
 const MAPS_URL = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(BUSINESS_ADDRESS)}`;
