@@ -51,7 +51,7 @@ const defaultApartments = [
   {
     id: "two-bedroom-1",
     name: { en: "Suite A", es: "Suite A" },
-    type: { en: "2 bedrooms, 4 beds", es: "2 recamaras, 4 camas" },
+    type: { en: "2 bedrooms, 4 beds", es: "2 recámaras, 4 camas" },
     totalUnits: 1,
     price: "$1,500 MXN",
     discountPrice: "",
@@ -65,7 +65,7 @@ const defaultApartments = [
   {
     id: "two-bedroom-2",
     name: { en: "Suite B", es: "Suite B" },
-    type: { en: "2 bedrooms, 4 beds", es: "2 recamaras, 4 camas" },
+    type: { en: "2 bedrooms, 4 beds", es: "2 recámaras, 4 camas" },
     totalUnits: 1,
     price: "$1,500 MXN",
     discountPrice: "",
@@ -79,7 +79,7 @@ const defaultApartments = [
   {
     id: "one-bedroom-1",
     name: { en: "Suite C", es: "Suite C" },
-    type: { en: "1 bedroom, 2 beds", es: "1 recamara, 2 camas" },
+    type: { en: "1 bedroom, 2 beds", es: "1 recámara, 2 camas" },
     totalUnits: 1,
     price: "$900 MXN",
     discountPrice: "",
@@ -93,7 +93,7 @@ const defaultApartments = [
   {
     id: "one-bedroom-2",
     name: { en: "Suite D", es: "Suite D" },
-    type: { en: "1 bedroom, 2 beds", es: "1 recamara, 2 camas" },
+    type: { en: "1 bedroom, 2 beds", es: "1 recámara, 2 camas" },
     totalUnits: 1,
     price: "$900 MXN",
     discountPrice: "",
@@ -107,7 +107,7 @@ const defaultApartments = [
   {
     id: "one-bedroom-3",
     name: { en: "Suite E", es: "Suite E" },
-    type: { en: "1 bedroom, 2 beds", es: "1 recamara, 2 camas" },
+    type: { en: "1 bedroom, 2 beds", es: "1 recámara, 2 camas" },
     totalUnits: 1,
     price: "$900 MXN",
     discountPrice: "",
@@ -121,7 +121,7 @@ const defaultApartments = [
   {
     id: "one-bedroom-4",
     name: { en: "Suite F", es: "Suite F" },
-    type: { en: "1 bedroom, 2 beds", es: "1 recamara, 2 camas" },
+    type: { en: "1 bedroom, 2 beds", es: "1 recámara, 2 camas" },
     totalUnits: 1,
     price: "$900 MXN",
     discountPrice: "",
@@ -154,19 +154,19 @@ const t = {
   welcomeTitle: { en: "Welcome to Tecuala Suites", es: "Bienvenido a Tecuala Suites" },
   welcomeText: {
     en: "Enjoy spacious apartment-style suites in Tecuala designed for comfort, whether you stay for a few days or several weeks. Our suites offer significantly more space than traditional hotel rooms and many apartments, with full kitchens, air conditioning in every bedroom, Fiber Optic Wi-Fi, a washer area, and modern amenities to make you feel at home.",
-    es: "Disfruta suites amplias estilo departamento en Tecuala, disenadas para tu comodidad, ya sea que te hospedes por unos dias o varias semanas. Nuestras suites ofrecen mucho mas espacio que las habitaciones de hotel tradicionales y muchos departamentos, con cocinas completas, aire acondicionado en cada recamara, Wi-Fi de fibra optica, area de lavado y amenidades modernas para que te sientas como en casa."
+    es: "Disfruta suites amplias estilo departamento en Tecuala, diseñadas para tu comodidad, ya sea que te hospedes por unos días o varias semanas. Nuestras suites ofrecen mucho más espacio que las habitaciones de hotel tradicionales y muchos departamentos, con cocinas completas, aire acondicionado en cada recámara, Wi-Fi de fibra óptica, área de lavado y amenidades modernas para que te sientas como en casa."
   },
-  locationTitle: { en: "Location", es: "Ubicacion" },
+  locationTitle: { en: "Location", es: "Ubicación" },
   locationText: {
     en: "Find us in Tecuala, Nayarit.",
-    es: "Encuentranos en Tecuala, Nayarit."
+    es: "Encuéntranos en Tecuala, Nayarit."
   },
   openMaps: { en: "Open in Google Maps", es: "Abrir en Google Maps" },
   locationPhoto: { en: "Street reference photo", es: "Foto de referencia" },
   searchTitle: { en: "Find a stay", es: "Buscar estancia" },
   checkIn: { en: "Check-in", es: "Entrada" },
   checkOut: { en: "Check-out", es: "Salida" },
-  guests: { en: "Guests", es: "Huespedes" },
+  guests: { en: "Guests", es: "Huéspedes" },
   apartments: { en: "Suites", es: "Suites" },
   from: { en: "From", es: "Desde" },
   perNight: { en: "per night", es: "por noche" },
@@ -175,7 +175,7 @@ const t = {
   selectDatesForTotal: { en: "Select dates to calculate total.", es: "Selecciona fechas para calcular el total." },
   capacity: { en: "Capacity", es: "Capacidad" },
   bathrooms: { en: "Bathrooms", es: "Baños" },
-  laundryRooms: { en: "Washer area", es: "Area de lavado" },
+  laundryRooms: { en: "Washer area", es: "Área de lavado" },
   totalUnits: { en: "Total units", es: "Unidades totales" },
   available: { en: "Available", es: "Disponible" },
   limited: { en: "Limited availability", es: "Disponibilidad limitada" },
@@ -193,17 +193,17 @@ const t = {
   bookingForm: { en: "Manual booking", es: "Reserva manual" },
   unitsToBlock: { en: "Units to block", es: "Unidades a bloquear" },
   source: { en: "Booking source", es: "Origen de reserva" },
-  guestName: { en: "Guest name", es: "Nombre del huesped" },
-  deposit: { en: "Deposit", es: "Deposito" },
+  guestName: { en: "Guest name", es: "Nombre del huésped" },
+  deposit: { en: "Deposit", es: "Depósito" },
   status: { en: "Status", es: "Estado" },
   priceSettings: { en: "Suite prices", es: "Precios de suites" },
   regularPrice: { en: "Regular price", es: "Precio regular" },
   discountPrice: { en: "Discount price", es: "Precio con descuento" },
   discountHelp: {
     en: "Leave discount blank to show only the regular price.",
-    es: "Deja el descuento vacio para mostrar solo el precio regular."
+    es: "Deja el descuento vacío para mostrar solo el precio regular."
   },
-  publicListing: { en: "Public listing", es: "Listado publico" },
+  publicListing: { en: "Public listing", es: "Listado público" },
   visible: { en: "Visible", es: "Visible" },
   hidden: { en: "Hidden", es: "Oculta" },
   hideSuite: { en: "Hide suite", es: "Ocultar suite" },
@@ -216,7 +216,7 @@ const t = {
   units: { en: "Units", es: "Unidades" },
   edit: { en: "Edit", es: "Editar" },
   delete: { en: "Delete", es: "Eliminar" },
-  noBookings: { en: "No bookings yet.", es: "Todavia no hay reservas." },
+  noBookings: { en: "No bookings yet.", es: "Todavía no hay reservas." },
   ownerNotes: { en: "Owner notes", es: "Notas del propietario" },
   saveNotes: { en: "Save notes", es: "Guardar notas" },
   exportCsv: { en: "Export bookings to CSV", es: "Exportar reservas a CSV" },
@@ -227,10 +227,10 @@ const t = {
     en: "Not enough units available for those dates.",
     es: "No hay suficientes unidades disponibles para esas fechas."
   },
-  invalidDates: { en: "Check-out must be after check-in.", es: "La salida debe ser despues de la entrada." },
+  invalidDates: { en: "Check-out must be after check-in.", es: "La salida debe ser después de la entrada." },
   pastDate: { en: "Dates cannot be in the past.", es: "Las fechas no pueden ser anteriores a hoy." },
-  invalidUnits: { en: "Units must be at least 1.", es: "Las unidades deben ser minimo 1." },
-  requiredFields: { en: "Please complete dates and guest name.", es: "Completa fechas y nombre del huesped." },
+  invalidUnits: { en: "Units must be at least 1.", es: "Las unidades deben ser mínimo 1." },
+  requiredFields: { en: "Please complete dates and guest name.", es: "Completa fechas y nombre del huésped." },
   availabilityFor: { en: "Availability for selected dates", es: "Disponibilidad para fechas seleccionadas" },
   selectDates: { en: "Select dates to check exact availability.", es: "Selecciona fechas para revisar disponibilidad exacta." },
   close: { en: "Close", es: "Cerrar" }
@@ -239,7 +239,7 @@ const t = {
 const sources = [
   { value: "WhatsApp", label: { en: "WhatsApp", es: "WhatsApp" } },
   { value: "Facebook", label: { en: "Facebook", es: "Facebook" } },
-  { value: "Phone", label: { en: "Phone", es: "Telefono" } },
+  { value: "Phone", label: { en: "Phone", es: "Teléfono" } },
   { value: "Walk-in", label: { en: "Walk-in", es: "En persona" } },
   { value: "Other", label: { en: "Other", es: "Otro" } },
   { value: "Maintenance", label: { en: "Maintenance", es: "Mantenimiento" } },
@@ -500,7 +500,7 @@ function App() {
     const total = nights && activePrice.amount ? formatMxn(activePrice.amount * nights) : "";
     const message =
       language === "es"
-        ? `Hola, quiero reservar ${suiteName} del ${search.checkIn || "fecha de entrada"} al ${search.checkOut || "fecha de salida"} para ${search.guests || 1} huespedes.${total ? ` Total estimado: ${total} por ${nights} noches.` : ""}`
+        ? `Hola, quiero reservar ${suiteName} del ${search.checkIn || "fecha de entrada"} al ${search.checkOut || "fecha de salida"} para ${search.guests || 1} huéspedes.${total ? ` Total estimado: ${total} por ${nights} noches.` : ""}`
         : `Hi, I want to book ${suiteName} from ${search.checkIn || "check-in"} to ${search.checkOut || "check-out"} for ${search.guests || 1} guests.${total ? ` Estimated total: ${total} for ${nights} nights.` : ""}`;
     return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
   }
