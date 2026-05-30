@@ -153,8 +153,8 @@ const t = {
   admin: { en: "Admin", es: "Admin" },
   welcomeTitle: { en: "Welcome to Tecuala Suites", es: "Bienvenido a Tecuala Suites" },
   welcomeText: {
-    en: "Comfortable furnished suites in Tecuala designed for short or extended stays. Enjoy spacious apartment-style accommodations with kitchens, air conditioning in every bedroom, Wi-Fi, a washer area, and everything you need to feel at home.",
-    es: "Suites comodas y amuebladas en Tecuala, disenadas para estancias cortas o largas. Disfruta espacios amplios estilo departamento con cocina, aire acondicionado en cada recamara, Wi-Fi, area de lavado y todo lo necesario para sentirte en casa."
+    en: "Enjoy spacious apartment-style suites in Tecuala designed for comfort, whether you stay for a few days or several weeks. Our suites offer significantly more space than traditional hotel rooms and many apartments, with full kitchens, air conditioning in every bedroom, Fiber Optic Wi-Fi, a washer area, and modern amenities to make you feel at home.",
+    es: "Disfruta suites amplias estilo departamento en Tecuala, disenadas para tu comodidad, ya sea que te hospedes por unos dias o varias semanas. Nuestras suites ofrecen mucho mas espacio que las habitaciones de hotel tradicionales y muchos departamentos, con cocinas completas, aire acondicionado en cada recamara, Wi-Fi de fibra optica, area de lavado y amenidades modernas para que te sientas como en casa."
   },
   locationTitle: { en: "Location", es: "Ubicacion" },
   locationText: {
