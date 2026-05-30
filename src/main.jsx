@@ -31,6 +31,14 @@ const MAPS_URL = `https://www.google.com/maps/search/?api=1&query=${encodeURICom
 const MAPS_EMBED_URL = `https://www.google.com/maps?q=${encodeURIComponent(BUSINESS_ADDRESS)}&output=embed`;
 // Replace this file with a real outside/street photo when ready.
 const LOCATION_PHOTO = "/images/location-reference.svg";
+const SHEET_SUITE_IDS = {
+  A: "two-bedroom-1",
+  B: "two-bedroom-2",
+  C: "one-bedroom-1",
+  D: "one-bedroom-2",
+  E: "one-bedroom-3",
+  F: "one-bedroom-4"
+};
 
 const STORAGE_KEYS = {
   language: "tecuala_language",
@@ -341,6 +349,14 @@ function mergeBookings(localBookings, sharedBookings) {
   return [...byId.values()];
 }
 
+function normalizeSharedBooking(booking) {
+  const sheetId = String(booking.apartmentId || "").trim().toUpperCase();
+  return {
+    ...booking,
+    apartmentId: SHEET_SUITE_IDS[sheetId] || booking.apartmentId
+  };
+}
+
 function toCsvValue(value) {
   const text = String(value ?? "");
   return `"${text.replaceAll('"', '""')}"`;
@@ -386,7 +402,7 @@ function App() {
       fetch(SHARED_BOOKINGS_URL, { cache: "no-store" })
         .then((response) => response.json())
         .then((data) => {
-          if (active && Array.isArray(data.bookings)) setSharedBookings(data.bookings);
+          if (active && Array.isArray(data.bookings)) setSharedBookings(data.bookings.map(normalizeSharedBooking));
         })
         .catch(() => {});
     };

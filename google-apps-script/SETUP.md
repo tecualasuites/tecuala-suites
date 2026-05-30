@@ -12,3 +12,14 @@
 
 The public website receives only suite IDs, dates, blocked units, and status.
 Guest names and deposits remain private in the spreadsheet.
+
+Use these simple values in the `apartmentId` column:
+
+| Suite | apartmentId |
+| --- | --- |
+| Suite A | `A` |
+| Suite B | `B` |
+| Suite C | `C` |
+| Suite D | `D` |
+| Suite E | `E` |
+| Suite F | `F` |
