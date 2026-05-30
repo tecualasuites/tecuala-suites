@@ -668,7 +668,7 @@ function App() {
               <p>{tr("welcomeText")}</p>
             </section>
 
-            <section className="search-panel">
+            <section id="search" className="search-panel">
           <div className="section-title">
             <Search size={20} />
             <h2>{tr("searchTitle")}</h2>
@@ -729,7 +729,7 @@ function App() {
                       <span>{tr("laundryRooms")}: {apartment.laundryRooms}</span>
                     </div>
                     <div className="button-row">
-                      <a className="secondary-button" href="#availability">
+                      <a className="secondary-button" href="#search">
                         <CalendarDays size={18} /> {tr("checkAvailability")}
                       </a>
                       <a className="primary-button" href={whatsappUrl(apartment)}>
@@ -743,26 +743,6 @@ function App() {
           </div>
             </section>
 
-            <section id="availability" className="panel">
-          <div className="section-title split">
-            <div>
-              <h2>{tr("availabilityOverview")}</h2>
-              <p>{exactSearch ? tr("availabilityFor") : tr("selectDates")}</p>
-            </div>
-          </div>
-          <div className="availability-list">
-            {availabilityRows.map((row) => (
-              <div className="availability-row" key={row.id}>
-                <div>
-                  <strong>{getSuiteName(row, language)}</strong>
-                  <span>{tr("totalUnits")}: {row.totalUnits}</span>
-                </div>
-                <div><span>{tr("booked")}</span><strong>{row.booked}</strong></div>
-                <div><span>{tr("available")}</span><strong>{row.available}</strong></div>
-              </div>
-            ))}
-          </div>
-            </section>
           </>
         )}
 
