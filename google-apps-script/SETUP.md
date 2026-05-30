@@ -13,6 +13,13 @@
 The public website receives only suite IDs, dates, blocked units, and status.
 Guest names and deposits remain private in the spreadsheet.
 
+Running `setupTecualaSuitesSheet` adds a dropdown to the `status` column with:
+
+- `Pending`
+- `Confirmed`
+- `Paid`
+- `Cancelled`
+
 Use these simple values in the `apartmentId` column:
 
 | Suite | apartmentId |

@@ -49,6 +49,13 @@ function getBookingsSheet_() {
     sheet.getRange(1, 1, 1, HEADERS.length).setFontWeight("bold");
   }
 
+  const statusRule = SpreadsheetApp.newDataValidation()
+    .requireValueInList(["Pending", "Confirmed", "Paid", "Cancelled"], true)
+    .setAllowInvalid(false)
+    .setHelpText("Choose Pending, Confirmed, Paid, or Cancelled.")
+    .build();
+  sheet.getRange("I2:I").setDataValidation(statusRule);
+
   return sheet;
 }
 
