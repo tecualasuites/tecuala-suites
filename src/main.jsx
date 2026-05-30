@@ -22,6 +22,8 @@ import "./styles.css";
 const WHATSAPP_NUMBER = "523891052106";
 const ADMIN_PIN = "2468";
 const BUSINESS_EMAIL = "tecualasuites@icloud.com";
+// Paste the deployed Google Apps Script web-app URL here after setup.
+const SHARED_BOOKINGS_URL = "";
 const BUSINESS_ADDRESS =
   "Luis Donaldo Colosio Murrieta Nte. 389 A, entre Ninos Heroes Oriente, Vicente Guerrero, 63450 Tecuala, Nay., Mexico";
 const MAPS_URL = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(BUSINESS_ADDRESS)}`;
@@ -332,6 +334,12 @@ function getBookedUnits(apartmentId, checkIn, checkOut, bookings, ignoreId = nul
     .reduce((sum, booking) => sum + Number(booking.units || 0), 0);
 }
 
+function mergeBookings(localBookings, sharedBookings) {
+  const byId = new Map();
+  [...sharedBookings, ...localBookings].forEach((booking) => byId.set(booking.id, booking));
+  return [...byId.values()];
+}
+
 function toCsvValue(value) {
   const text = String(value ?? "");
   return `"${text.replaceAll('"', '""')}"`;
@@ -346,6 +354,7 @@ function App() {
   const [language, setLanguage] = useState(() => localStorage.getItem(STORAGE_KEYS.language) || "es");
   const [apartments, setApartments] = useState(getInitialApartments);
   const [bookings, setBookings] = useState(() => readStorage(STORAGE_KEYS.bookings, []));
+  const [sharedBookings, setSharedBookings] = useState([]);
   const [notes, setNotes] = useState(() => localStorage.getItem(STORAGE_KEYS.notes) || "");
   const [savedNotes, setSavedNotes] = useState(false);
   const [search, setSearch] = useState({ checkIn: "", checkOut: "", guests: 2 });
@@ -362,10 +371,32 @@ function App() {
   const today = todayString();
   const nights = getNightCount(search.checkIn, search.checkOut);
   const visibleApartments = useMemo(() => apartments.filter((apartment) => !apartment.hidden), [apartments]);
+  const availabilityBookings = useMemo(() => mergeBookings(bookings, sharedBookings), [bookings, sharedBookings]);
 
   useEffect(() => writeStorage(STORAGE_KEYS.apartments, apartments), [apartments]);
   useEffect(() => writeStorage(STORAGE_KEYS.bookings, bookings), [bookings]);
   useEffect(() => localStorage.setItem(STORAGE_KEYS.language, language), [language]);
+
+  useEffect(() => {
+    if (!SHARED_BOOKINGS_URL) return;
+
+    let active = true;
+    const refreshSharedBookings = () => {
+      fetch(SHARED_BOOKINGS_URL, { cache: "no-store" })
+        .then((response) => response.json())
+        .then((data) => {
+          if (active && Array.isArray(data.bookings)) setSharedBookings(data.bookings);
+        })
+        .catch(() => {});
+    };
+
+    refreshSharedBookings();
+    const intervalId = window.setInterval(refreshSharedBookings, 60000);
+    return () => {
+      active = false;
+      window.clearInterval(intervalId);
+    };
+  }, []);
 
   useEffect(() => {
     const handler = (event) => {
@@ -402,12 +433,12 @@ function App() {
     () =>
       visibleApartments.map((apartment) => {
         const booked = exactSearch
-          ? getBookedUnits(apartment.id, search.checkIn, search.checkOut, bookings)
+          ? getBookedUnits(apartment.id, search.checkIn, search.checkOut, availabilityBookings)
           : 0;
         const available = Math.max(apartment.totalUnits - booked, 0);
         return { ...apartment, booked, available };
       }),
-    [visibleApartments, bookings, exactSearch, search.checkIn, search.checkOut]
+    [visibleApartments, availabilityBookings, exactSearch, search.checkIn, search.checkOut]
   );
 
   function todayString() {
@@ -476,7 +507,7 @@ function App() {
     }
 
     const apartment = apartments.find((item) => item.id === form.apartmentId);
-    const booked = getBookedUnits(form.apartmentId, form.checkIn, form.checkOut, bookings, editingId);
+    const booked = getBookedUnits(form.apartmentId, form.checkIn, form.checkOut, availabilityBookings, editingId);
     const requestedUnits = Number(form.units);
     if (!Number.isFinite(requestedUnits) || requestedUnits < 1) {
       setFormMessage(tr("invalidUnits"));
