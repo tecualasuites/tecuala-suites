@@ -163,7 +163,7 @@ const t = {
   nights: { en: "nights", es: "noches" },
   selectDatesForTotal: { en: "Select dates to calculate total.", es: "Selecciona fechas para calcular el total." },
   capacity: { en: "Capacity", es: "Capacidad" },
-  bathrooms: { en: "Bathrooms", es: "Banos" },
+  bathrooms: { en: "Bathrooms", es: "Baños" },
   laundryRooms: { en: "Washer area", es: "Area de lavado" },
   totalUnits: { en: "Total units", es: "Unidades totales" },
   available: { en: "Available", es: "Disponible" },
