@@ -645,7 +645,6 @@ function App() {
           <img className="brand-logo" src="/images/tecuala-logo.png" alt="Tecuala Suites" />
           <div>
             <h1>{tr("businessName")}</h1>
-            <a href={`mailto:${BUSINESS_EMAIL}`}>{BUSINESS_EMAIL}</a>
           </div>
         </div>
         <div className="header-actions">
