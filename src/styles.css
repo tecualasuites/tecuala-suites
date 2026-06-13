@@ -468,9 +468,72 @@ textarea {
 .pin-form,
 .booking-form,
 .pricing-section,
+.whatsapp-stats-section,
 .notes-section {
   display: grid;
   gap: 12px;
+}
+
+.whatsapp-stats-section {
+  background: #f8fafc;
+  border: 1px solid #dbeafe;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.stat-number {
+  align-items: center;
+  background: #0f766e;
+  border-radius: 8px;
+  color: #ffffff;
+  display: inline-flex;
+  font-size: 1.5rem;
+  justify-content: center;
+  min-height: 48px;
+  min-width: 64px;
+  padding: 8px 14px;
+}
+
+.click-list {
+  display: grid;
+  gap: 8px;
+}
+
+.click-list h3 {
+  color: #0f172a;
+  font-size: 0.98rem;
+}
+
+.click-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  display: grid;
+  gap: 6px;
+  padding: 10px;
+}
+
+.click-card div {
+  align-items: flex-start;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.click-card strong {
+  color: #0f172a;
+}
+
+.click-card span,
+.click-card p,
+.click-card a {
+  color: #64748b;
+  font-size: 0.84rem;
+}
+
+.click-card a {
+  color: #0f766e;
+  font-weight: 750;
 }
 
 .pricing-list {

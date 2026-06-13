@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { track } from "@vercel/analytics";
 import { Analytics } from "@vercel/analytics/react";
 import {
   CalendarDays,
@@ -45,7 +46,8 @@ const STORAGE_KEYS = {
   language: "tecuala_language",
   apartments: "tecuala_apartments",
   bookings: "tecuala_bookings",
-  notes: "tecuala_owner_notes"
+  notes: "tecuala_owner_notes",
+  whatsappClicks: "tecuala_whatsapp_clicks"
 };
 
 const defaultApartments = [
@@ -218,6 +220,13 @@ const t = {
   edit: { en: "Edit", es: "Editar" },
   delete: { en: "Delete", es: "Eliminar" },
   noBookings: { en: "No bookings yet.", es: "Todavía no hay reservas." },
+  whatsappStats: { en: "WhatsApp click stats", es: "Estadísticas de clics en WhatsApp" },
+  totalWhatsappClicks: { en: "Total WhatsApp clicks", es: "Total de clics en WhatsApp" },
+  recentWhatsappClicks: { en: "Recent clicks", es: "Clics recientes" },
+  noWhatsappClicks: { en: "No WhatsApp clicks yet.", es: "Todavía no hay clics de WhatsApp." },
+  clickPage: { en: "Page URL", es: "URL de página" },
+  clickDateTime: { en: "Date/time", es: "Fecha/hora" },
+  floatingWhatsapp: { en: "Floating WhatsApp button", es: "Botón flotante de WhatsApp" },
   ownerNotes: { en: "Owner notes", es: "Notas del propietario" },
   saveNotes: { en: "Save notes", es: "Guardar notas" },
   exportCsv: { en: "Export bookings to CSV", es: "Exportar reservas a CSV" },
@@ -383,11 +392,26 @@ function createId() {
   return `booking-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
+function sendSharedWhatsappClick(click) {
+  if (!SHARED_BOOKINGS_URL) return;
+
+  fetch(SHARED_BOOKINGS_URL, {
+    method: "POST",
+    mode: "no-cors",
+    keepalive: true,
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify({ action: "whatsappClick", click })
+  }).catch(() => {});
+}
+
 function App() {
   const [language, setLanguage] = useState(() => localStorage.getItem(STORAGE_KEYS.language) || "es");
   const [apartments, setApartments] = useState(getInitialApartments);
   const [bookings, setBookings] = useState(() => readStorage(STORAGE_KEYS.bookings, []));
   const [sharedBookings, setSharedBookings] = useState([]);
+  const [whatsappClicks, setWhatsappClicks] = useState(() => readStorage(STORAGE_KEYS.whatsappClicks, []));
+  const [sharedWhatsappClicks, setSharedWhatsappClicks] = useState([]);
+  const [sharedWhatsappClickCount, setSharedWhatsappClickCount] = useState(null);
   const [notes, setNotes] = useState(() => localStorage.getItem(STORAGE_KEYS.notes) || "");
   const [savedNotes, setSavedNotes] = useState(false);
   const [search, setSearch] = useState({ checkIn: "", checkOut: "", guests: 2 });
@@ -405,9 +429,12 @@ function App() {
   const nights = getNightCount(search.checkIn, search.checkOut);
   const visibleApartments = useMemo(() => apartments.filter((apartment) => !apartment.hidden), [apartments]);
   const availabilityBookings = useMemo(() => mergeBookings(bookings, sharedBookings), [bookings, sharedBookings]);
+  const dashboardWhatsappClicks = sharedWhatsappClicks.length ? sharedWhatsappClicks : whatsappClicks;
+  const dashboardWhatsappClickCount = sharedWhatsappClickCount ?? whatsappClicks.length;
 
   useEffect(() => writeStorage(STORAGE_KEYS.apartments, apartments), [apartments]);
   useEffect(() => writeStorage(STORAGE_KEYS.bookings, bookings), [bookings]);
+  useEffect(() => writeStorage(STORAGE_KEYS.whatsappClicks, whatsappClicks), [whatsappClicks]);
   useEffect(() => localStorage.setItem(STORAGE_KEYS.language, language), [language]);
 
   useEffect(() => {
@@ -418,7 +445,12 @@ function App() {
       fetch(SHARED_BOOKINGS_URL, { cache: "no-store" })
         .then((response) => response.json())
         .then((data) => {
-          if (active && Array.isArray(data.bookings)) setSharedBookings(data.bookings.map(normalizeSharedBooking));
+          if (!active) return;
+          if (Array.isArray(data.bookings)) setSharedBookings(data.bookings.map(normalizeSharedBooking));
+          if (Array.isArray(data.whatsappClicks)) setSharedWhatsappClicks(data.whatsappClicks);
+          if (Number.isFinite(Number(data.whatsappClickCount))) {
+            setSharedWhatsappClickCount(Number(data.whatsappClickCount));
+          }
         })
         .catch(() => {});
     };
@@ -504,6 +536,38 @@ function App() {
         ? `Hola, quiero reservar ${suiteName} del ${search.checkIn || "fecha de entrada"} al ${search.checkOut || "fecha de salida"} para ${search.guests || 1} huéspedes.${total ? ` Total estimado: ${total} por ${nights} noches.` : ""}`
         : `Hi, I want to book ${suiteName} from ${search.checkIn || "check-in"} to ${search.checkOut || "check-out"} for ${search.guests || 1} guests.${total ? ` Estimated total: ${total} for ${nights} nights.` : ""}`;
     return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+  }
+
+  function recordWhatsappClick(apartment = null) {
+    const suiteName = apartment ? getSuiteName(apartment, language) : tr("floatingWhatsapp");
+    const click = {
+      id: createId(),
+      clickedAt: new Date().toISOString(),
+      pageUrl: window.location.href,
+      suiteName,
+      apartmentId: apartment?.id || "floating",
+      checkIn: search.checkIn || "",
+      checkOut: search.checkOut || "",
+      guests: String(search.guests || 1)
+    };
+
+    track("WhatsApp Booking Click", {
+      suite: suiteName,
+      apartmentId: click.apartmentId,
+      pageUrl: click.pageUrl,
+      checkIn: click.checkIn || "none",
+      checkOut: click.checkOut || "none",
+      guests: Number(click.guests) || 1
+    });
+
+    setWhatsappClicks((current) => {
+      const next = [click, ...current].slice(0, 250);
+      writeStorage(STORAGE_KEYS.whatsappClicks, next);
+      return next;
+    });
+    setSharedWhatsappClicks((current) => [click, ...current].slice(0, 25));
+    setSharedWhatsappClickCount((current) => (Number.isFinite(Number(current)) ? Number(current) + 1 : null));
+    sendSharedWhatsappClick(click);
   }
 
   function unlockAdmin(event) {
@@ -732,7 +796,7 @@ function App() {
                       <a className="secondary-button" href="#search">
                         <CalendarDays size={18} /> {tr("checkAvailability")}
                       </a>
-                      <a className="primary-button" href={whatsappUrl(apartment)}>
+                      <a className="primary-button" href={whatsappUrl(apartment)} onClick={() => recordWhatsappClick(apartment)}>
                         <MessageCircle size={18} /> {tr("bookWhatsapp")}
                       </a>
                     </div>
@@ -769,6 +833,13 @@ function App() {
                 </form>
               ) : (
                 <>
+                  <WhatsAppClickStats
+                    clicks={dashboardWhatsappClicks}
+                    total={dashboardWhatsappClickCount}
+                    tr={tr}
+                    language={language}
+                  />
+
                   <section className="pricing-section">
                     <div className="section-title split">
                       <div>
@@ -940,7 +1011,12 @@ function App() {
         )}
       </main>
 
-      <a className="whatsapp-float" href={`https://wa.me/${WHATSAPP_NUMBER}`} aria-label={tr("bookWhatsapp")}>
+      <a
+        className="whatsapp-float"
+        href={`https://wa.me/${WHATSAPP_NUMBER}`}
+        aria-label={tr("bookWhatsapp")}
+        onClick={() => recordWhatsappClick(null)}
+      >
         <MessageCircle size={26} />
       </a>
     </div>
@@ -1000,6 +1076,54 @@ function PriceDisplay({ apartment, tr, nights }) {
       )}
     </span>
   );
+}
+
+function WhatsAppClickStats({ clicks, total, tr, language }) {
+  return (
+    <section className="whatsapp-stats-section">
+      <div className="section-title split">
+        <div>
+          <h2>{tr("whatsappStats")}</h2>
+          <p>{tr("totalWhatsappClicks")}</p>
+        </div>
+        <strong className="stat-number">{total}</strong>
+      </div>
+      <div className="click-list">
+        <h3>{tr("recentWhatsappClicks")}</h3>
+        {!clicks.length ? (
+          <p className="empty">{tr("noWhatsappClicks")}</p>
+        ) : (
+          clicks.slice(0, 8).map((click) => (
+            <article className="click-card" key={click.id || `${click.clickedAt}-${click.pageUrl}`}>
+              <div>
+                <strong>{click.suiteName || click.apartmentId || "WhatsApp"}</strong>
+                <span>{formatDateTime(click.clickedAt, language)}</span>
+              </div>
+              <p>
+                {click.checkIn && click.checkOut ? `${click.checkIn} - ${click.checkOut}` : tr("selectDates")}
+                {click.guests ? ` · ${click.guests} ${tr("guests").toLowerCase()}` : ""}
+              </p>
+              {click.pageUrl && (
+                <a href={click.pageUrl} target="_blank" rel="noreferrer">
+                  {tr("clickPage")}
+                </a>
+              )}
+            </article>
+          ))
+        )}
+      </div>
+    </section>
+  );
+}
+
+function formatDateTime(value, language) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return date.toLocaleString(language === "es" ? "es-MX" : "en-US", {
+    dateStyle: "medium",
+    timeStyle: "short"
+  });
 }
 
 function BookingList({ bookings, apartments, tr, language, onEdit, onDelete }) {
