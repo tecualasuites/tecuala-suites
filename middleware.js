@@ -43,17 +43,6 @@ async function isValidSession(token) {
   }
 }
 
-function applyRedirectHeaders(response, pathname) {
-  response.headers.set("X-Content-Type-Options", "nosniff");
-  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
-  response.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
-  response.headers.set("X-Frame-Options", "DENY");
-  if (pathname.startsWith("/admin")) {
-    response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
-  }
-  return response;
-}
-
 export default async function middleware(request) {
   const url = new URL(request.url);
   const { pathname } = url;
@@ -64,13 +53,13 @@ export default async function middleware(request) {
     const token = getCookie(request.headers.get("cookie") || "", SESSION_COOKIE);
     if (!(await isValidSession(token))) {
       const loginUrl = new URL("/admin-login", request.url);
-      return applyRedirectHeaders(Response.redirect(loginUrl, 302), pathname);
+      return Response.redirect(loginUrl, 302);
     }
   }
 
   if (isLoginPath && (await isValidSession(getCookie(request.headers.get("cookie") || "", SESSION_COOKIE)))) {
     const adminUrl = new URL("/admin", request.url);
-    return applyRedirectHeaders(Response.redirect(adminUrl, 302), pathname);
+    return Response.redirect(adminUrl, 302);
   }
 }
 
