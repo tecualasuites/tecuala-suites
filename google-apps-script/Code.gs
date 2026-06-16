@@ -1,5 +1,16 @@
 const BOOKINGS_SHEET = "Bookings";
 const CLICKS_SHEET = "WhatsAppClicks";
+const SHARED_SECRET_PROPERTY = "APPS_SCRIPT_SHARED_SECRET";
+const MAX_TEXT_LENGTH = 500;
+const ALLOWED_APARTMENT_IDS = [
+  "two-bedroom-1",
+  "two-bedroom-2",
+  "one-bedroom-1",
+  "one-bedroom-2",
+  "one-bedroom-3",
+  "one-bedroom-4",
+  "floating"
+];
 const HEADERS = [
   "id",
   "apartmentId",
@@ -22,7 +33,11 @@ const CLICK_HEADERS = [
   "guests"
 ];
 
-function doGet() {
+function doGet(e) {
+  if (!isAuthorized_(e && e.parameter && e.parameter.token)) {
+    return json_({ ok: false, error: "Unauthorized" });
+  }
+
   const sheet = getBookingsSheet_();
   const rows = sheet.getDataRange().getValues();
   const clickSheet = getClicksSheet_();
@@ -66,8 +81,11 @@ function doGet() {
 function doPost(e) {
   try {
     const payload = JSON.parse((e.postData && e.postData.contents) || "{}");
-    if (payload.action !== "whatsappClick" || !payload.click) {
-      return json_({ ok: false, error: "Unknown action" });
+    if (!isAuthorized_(payload.token)) {
+      return json_({ ok: false, error: "Unauthorized" });
+    }
+    if (payload.action !== "whatsappClick" || !isValidClick_(payload.click)) {
+      return json_({ ok: false, error: "Invalid request" });
     }
 
     const click = payload.click;
@@ -91,6 +109,13 @@ function doPost(e) {
 function setupTecualaSuitesSheet() {
   getBookingsSheet_();
   getClicksSheet_();
+}
+
+function setSharedSecret(value) {
+  if (!value || String(value).length < 32) {
+    throw new Error("Shared secret must be at least 32 characters.");
+  }
+  PropertiesService.getScriptProperties().setProperty(SHARED_SECRET_PROPERTY, String(value));
 }
 
 function getBookingsSheet_() {
@@ -147,4 +172,35 @@ function json_(data) {
   return ContentService
     .createTextOutput(JSON.stringify(data))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+function isAuthorized_(token) {
+  const expected = PropertiesService.getScriptProperties().getProperty(SHARED_SECRET_PROPERTY);
+  return Boolean(expected && token && String(token) === expected);
+}
+
+function isValidClick_(click) {
+  return Boolean(
+    click &&
+      isShortText_(click.id) &&
+      isIsoTimestamp_(click.clickedAt) &&
+      isShortText_(click.pageUrl) &&
+      isShortText_(click.suiteName) &&
+      ALLOWED_APARTMENT_IDS.indexOf(String(click.apartmentId || "")) !== -1 &&
+      isDateString_(click.checkIn || "") &&
+      isDateString_(click.checkOut || "") &&
+      isShortText_(String(click.guests || ""))
+  );
+}
+
+function isShortText_(value) {
+  return typeof value === "string" && value.length <= MAX_TEXT_LENGTH;
+}
+
+function isDateString_(value) {
+  return value === "" || (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value));
+}
+
+function isIsoTimestamp_(value) {
+  return typeof value === "string" && !isNaN(new Date(value).getTime());
 }

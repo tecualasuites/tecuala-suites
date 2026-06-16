@@ -21,12 +21,6 @@ import {
 } from "lucide-react";
 import "./styles.css";
 
-const WHATSAPP_NUMBER = "523891052106";
-const ADMIN_PIN = "2468";
-const BUSINESS_EMAIL = "tecualasuites@icloud.com";
-// Paste the deployed Google Apps Script web-app URL here after setup.
-const SHARED_BOOKINGS_URL =
-  "https://script.google.com/macros/s/AKfycbyGZ9bW29_Xv3PEHiA6TB04CyKfXtf3Hcx4qqIrmOy7EohpNE-86sQasbh8YXr2GIRQfQ/exec";
 const BUSINESS_ADDRESS =
   "Luis Donaldo Colosio Murrieta Nte. 389 A, entre Ninos Heroes Oriente, Vicente Guerrero, 63450 Tecuala, Nay., Mexico";
 const MAPS_URL = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(BUSINESS_ADDRESS)}`;
@@ -189,10 +183,14 @@ const t = {
   apartment: { en: "Suite", es: "Suite" },
   booked: { en: "Booked", es: "Reservado" },
   adminPanel: { en: "Admin panel", es: "Panel admin" },
+  adminLogin: { en: "Admin login", es: "Acceso admin" },
+  adminPassword: { en: "Admin password", es: "Contraseña admin" },
   backToSite: { en: "Back to site", es: "Volver al sitio" },
-  enterPin: { en: "Enter PIN", es: "Ingresar PIN" },
-  unlock: { en: "Unlock", es: "Abrir" },
-  wrongPin: { en: "Incorrect PIN", es: "PIN incorrecto" },
+  logout: { en: "Logout", es: "Cerrar sesión" },
+  signIn: { en: "Sign in", es: "Iniciar sesión" },
+  checkingSession: { en: "Checking admin session...", es: "Revisando sesión admin..." },
+  loginFailed: { en: "Login failed. Check the password and try again.", es: "No se pudo iniciar sesión. Revisa la contraseña e intenta de nuevo." },
+  loginLimited: { en: "Too many attempts. Try again later.", es: "Demasiados intentos. Intenta más tarde." },
   bookingForm: { en: "Manual booking", es: "Reserva manual" },
   unitsToBlock: { en: "Units to block", es: "Unidades a bloquear" },
   source: { en: "Booking source", es: "Origen de reserva" },
@@ -393,14 +391,11 @@ function createId() {
 }
 
 function sendSharedWhatsappClick(click) {
-  if (!SHARED_BOOKINGS_URL) return;
-
-  fetch(SHARED_BOOKINGS_URL, {
+  fetch("/api/whatsapp-click", {
     method: "POST",
-    mode: "no-cors",
     keepalive: true,
-    headers: { "Content-Type": "text/plain;charset=utf-8" },
-    body: JSON.stringify({ action: "whatsappClick", click })
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ click })
   }).catch(() => {});
 }
 
@@ -412,13 +407,16 @@ function App() {
   const [whatsappClicks, setWhatsappClicks] = useState(() => readStorage(STORAGE_KEYS.whatsappClicks, []));
   const [sharedWhatsappClicks, setSharedWhatsappClicks] = useState([]);
   const [sharedWhatsappClickCount, setSharedWhatsappClickCount] = useState(null);
+  const [publicConfig, setPublicConfig] = useState({ whatsappNumber: "", businessEmail: "" });
   const [notes, setNotes] = useState(() => localStorage.getItem(STORAGE_KEYS.notes) || "");
   const [savedNotes, setSavedNotes] = useState(false);
   const [search, setSearch] = useState({ checkIn: "", checkOut: "", guests: 2 });
   const isAdminPage = window.location.pathname === "/admin";
-  const [unlocked, setUnlocked] = useState(false);
-  const [pin, setPin] = useState("");
-  const [pinError, setPinError] = useState("");
+  const isAdminLoginPage = window.location.pathname === "/admin-login";
+  const [adminAuthenticated, setAdminAuthenticated] = useState(false);
+  const [adminChecking, setAdminChecking] = useState(isAdminPage);
+  const [adminPassword, setAdminPassword] = useState("");
+  const [loginMessage, setLoginMessage] = useState("");
   const [form, setForm] = useState(emptyBooking);
   const [editingId, setEditingId] = useState(null);
   const [formMessage, setFormMessage] = useState("");
@@ -438,11 +436,9 @@ function App() {
   useEffect(() => localStorage.setItem(STORAGE_KEYS.language, language), [language]);
 
   useEffect(() => {
-    if (!SHARED_BOOKINGS_URL) return;
-
     let active = true;
     const refreshSharedBookings = () => {
-      fetch(SHARED_BOOKINGS_URL, { cache: "no-store" })
+      fetch("/api/shared-data", { cache: "no-store" })
         .then((response) => response.json())
         .then((data) => {
           if (!active) return;
@@ -462,6 +458,32 @@ function App() {
       window.clearInterval(intervalId);
     };
   }, []);
+
+  useEffect(() => {
+    fetch("/api/public-config", { cache: "no-store" })
+      .then((response) => response.json())
+      .then((data) => {
+        setPublicConfig({
+          whatsappNumber: String(data.whatsappNumber || ""),
+          businessEmail: String(data.businessEmail || "")
+        });
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (!isAdminPage) return;
+    fetch("/api/admin/session", { cache: "no-store" })
+      .then((response) => {
+        if (!response.ok) {
+          window.location.assign("/admin-login");
+          return;
+        }
+        setAdminAuthenticated(true);
+      })
+      .catch(() => window.location.assign("/admin-login"))
+      .finally(() => setAdminChecking(false));
+  }, [isAdminPage]);
 
   useEffect(() => {
     const handler = (event) => {
@@ -528,6 +550,7 @@ function App() {
   }
 
   function whatsappUrl(apartment) {
+    if (!publicConfig.whatsappNumber) return "#";
     const suiteName = getSuiteName(apartment, language);
     const activePrice = getActivePrice(apartment);
     const total = nights && activePrice.amount ? formatMxn(activePrice.amount * nights) : "";
@@ -535,7 +558,7 @@ function App() {
       language === "es"
         ? `Hola, quiero reservar ${suiteName} del ${search.checkIn || "fecha de entrada"} al ${search.checkOut || "fecha de salida"} para ${search.guests || 1} huéspedes.${total ? ` Total estimado: ${total} por ${nights} noches.` : ""}`
         : `Hi, I want to book ${suiteName} from ${search.checkIn || "check-in"} to ${search.checkOut || "check-out"} for ${search.guests || 1} guests.${total ? ` Estimated total: ${total} for ${nights} nights.` : ""}`;
-    return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+    return `https://wa.me/${publicConfig.whatsappNumber}?text=${encodeURIComponent(message)}`;
   }
 
   function recordWhatsappClick(apartment = null) {
@@ -570,15 +593,27 @@ function App() {
     sendSharedWhatsappClick(click);
   }
 
-  function unlockAdmin(event) {
+  async function loginAdmin(event) {
     event.preventDefault();
-    if (pin === ADMIN_PIN) {
-      setUnlocked(true);
-      setPinError("");
-      setPin("");
-    } else {
-      setPinError(tr("wrongPin"));
+    setLoginMessage("");
+
+    const response = await fetch("/api/admin/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password: adminPassword })
+    }).catch(() => null);
+
+    if (response?.ok) {
+      window.location.assign("/admin");
+      return;
     }
+
+    setLoginMessage(response?.status === 429 ? tr("loginLimited") : tr("loginFailed"));
+  }
+
+  async function logoutAdmin() {
+    await fetch("/api/admin/logout", { method: "POST" }).catch(() => {});
+    window.location.assign("/admin-login");
   }
 
   function resetForm() {
@@ -633,7 +668,6 @@ function App() {
   function editBooking(booking) {
     setForm({ ...booking });
     setEditingId(booking.id);
-    setUnlocked(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -725,7 +759,7 @@ function App() {
       </header>
 
       <main>
-        {!isAdminPage && (
+        {!isAdminPage && !isAdminLoginPage && (
           <>
             <section className="welcome-panel">
               <h2>{tr("welcomeTitle")}</h2>
@@ -810,6 +844,38 @@ function App() {
           </>
         )}
 
+        {isAdminLoginPage && (
+          <section className="admin-shell">
+            <div className="panel">
+              <div className="section-title split">
+                <div className="admin-title">
+                  <Lock size={20} />
+                  <h2>{tr("adminLogin")}</h2>
+                </div>
+                <a className="secondary-button compact" href="/">
+                  {tr("backToSite")}
+                </a>
+              </div>
+              <form className="pin-form" onSubmit={loginAdmin}>
+                <label>
+                  {tr("adminPassword")}
+                  <input
+                    value={adminPassword}
+                    onChange={(e) => setAdminPassword(e.target.value)}
+                    type="password"
+                    autoComplete="current-password"
+                    required
+                  />
+                </label>
+                {loginMessage && <p className="error">{loginMessage}</p>}
+                <button className="primary-button" type="submit">
+                  <Lock size={18} /> {tr("signIn")}
+                </button>
+              </form>
+            </div>
+          </section>
+        )}
+
         {isAdminPage && (
           <section className="admin-shell">
             <div className="panel">
@@ -821,16 +887,12 @@ function App() {
                 <a className="secondary-button compact" href="/">
                   {tr("backToSite")}
                 </a>
+                <button className="secondary-button compact" type="button" onClick={logoutAdmin}>
+                  {tr("logout")}
+                </button>
               </div>
-              {!unlocked ? (
-                <form className="pin-form" onSubmit={unlockAdmin}>
-                  <label>
-                    {tr("enterPin")}
-                    <input value={pin} onChange={(e) => setPin(e.target.value)} inputMode="numeric" type="password" />
-                  </label>
-                  {pinError && <p className="error">{pinError}</p>}
-                  <button className="primary-button" type="submit"><Lock size={18} /> {tr("unlock")}</button>
-                </form>
+              {adminChecking || !adminAuthenticated ? (
+                <p className="empty">{tr("checkingSession")}</p>
               ) : (
                 <>
                   <WhatsAppClickStats
@@ -980,7 +1042,7 @@ function App() {
           </section>
         )}
 
-        {!isAdminPage && (
+        {!isAdminPage && !isAdminLoginPage && (
           <section className="location-panel">
           <div className="section-title split">
             <div>
@@ -1001,9 +1063,11 @@ function App() {
             <img src={LOCATION_PHOTO} alt={tr("locationPhoto")} loading="lazy" />
             <figcaption>{tr("locationPhoto")}</figcaption>
           </figure>
-          <a className="secondary-button map-button" href={`mailto:${BUSINESS_EMAIL}`}>
-            {BUSINESS_EMAIL}
-          </a>
+          {publicConfig.businessEmail && (
+            <a className="secondary-button map-button" href={`mailto:${publicConfig.businessEmail}`}>
+              {publicConfig.businessEmail}
+            </a>
+          )}
           <a className="secondary-button map-button" href={MAPS_URL}>
             {tr("openMaps")}
           </a>
@@ -1011,14 +1075,16 @@ function App() {
         )}
       </main>
 
-      <a
-        className="whatsapp-float"
-        href={`https://wa.me/${WHATSAPP_NUMBER}`}
-        aria-label={tr("bookWhatsapp")}
-        onClick={() => recordWhatsappClick(null)}
-      >
-        <MessageCircle size={26} />
-      </a>
+      {!isAdminLoginPage && publicConfig.whatsappNumber && (
+        <a
+          className="whatsapp-float"
+          href={`https://wa.me/${publicConfig.whatsappNumber}`}
+          aria-label={tr("bookWhatsapp")}
+          onClick={() => recordWhatsappClick(null)}
+        >
+          <MessageCircle size={26} />
+        </a>
+      )}
     </div>
   );
 }
