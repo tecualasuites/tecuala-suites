@@ -55,22 +55,31 @@ function applyRedirectHeaders(response, pathname) {
 }
 
 export default async function middleware(request) {
-  const { pathname } = request.nextUrl;
+  const url = new URL(request.url);
+  const { pathname } = url;
   const isAdminPath = pathname === "/admin" || pathname.startsWith("/admin/");
   const isLoginPath = pathname === "/admin-login";
 
   if (isAdminPath) {
-    const token = request.cookies.get(SESSION_COOKIE)?.value;
+    const token = getCookie(request.headers.get("cookie") || "", SESSION_COOKIE);
     if (!(await isValidSession(token))) {
       const loginUrl = new URL("/admin-login", request.url);
       return applyRedirectHeaders(Response.redirect(loginUrl, 302), pathname);
     }
   }
 
-  if (isLoginPath && (await isValidSession(request.cookies.get(SESSION_COOKIE)?.value))) {
+  if (isLoginPath && (await isValidSession(getCookie(request.headers.get("cookie") || "", SESSION_COOKIE)))) {
     const adminUrl = new URL("/admin", request.url);
     return applyRedirectHeaders(Response.redirect(adminUrl, 302), pathname);
   }
+}
+
+function getCookie(cookieHeader, name) {
+  return cookieHeader
+    .split(";")
+    .map((cookie) => cookie.trim())
+    .find((cookie) => cookie.startsWith(`${name}=`))
+    ?.slice(name.length + 1);
 }
 
 export const config = {
