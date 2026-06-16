@@ -165,6 +165,13 @@ Set the same `APPS_SCRIPT_SHARED_SECRET` in Google Apps Script Script Properties
 
 Then redeploy the Google Apps Script web app and redeploy Vercel.
 
+## Current Deployment Status
+
+- Vercel environment variables were added for the hardened site deployment.
+- The Vercel site-side protections are deployed: admin login is server-side, `/admin` redirects unauthenticated users, and security/noindex headers are present.
+- The hardened Google Apps Script code is committed and pushed to the Apps Script project HEAD, but the live Apps Script web app was rolled back to version 3 to avoid breaking the existing site while Google refused remote execution of `setSharedSecret`.
+- To activate Apps Script authorization enforcement, set the Script Property `APPS_SCRIPT_SHARED_SECRET` to the same value as Vercel's `APPS_SCRIPT_SHARED_SECRET`, then deploy the latest Apps Script code as a new web app version.
+
 ## Remaining Security Notes
 
 - `PUBLIC_WHATSAPP_NUMBER` and `PUBLIC_BUSINESS_EMAIL` are public by nature because they are displayed/used in the browser. They are still configured through environment variables for operational hygiene.
