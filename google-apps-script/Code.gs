@@ -95,23 +95,29 @@ function doPost(e) {
   } catch (error) { return json_({ ok: false, error: String(error) }); }
 }
 
+function normalizeApartmentId_(value) {
+  const raw = String(value || "").trim();
+  const legacy = { A: "two-bedroom-1", B: "two-bedroom-2", C: "one-bedroom-1", D: "one-bedroom-2", E: "one-bedroom-3", F: "one-bedroom-4" };
+  return legacy[raw.toUpperCase()] || raw;
+}
+
 function createReservation_(reservation) {
   const lock = LockService.getScriptLock(); lock.waitLock(15000);
   try {
     const sheet = getBookingsSheet_(); const rows = sheet.getDataRange().getValues().slice(1); const reservationId = String(reservation.id || Utilities.getUuid());
     const existing = rows.find((row) => String(row[0]) === reservationId);
     if (existing) return json_({ ok: true, duplicate: true, reservation: bookingRow_(existing) });
-    const conflict = rows.find((row) => String(row[8] || "Confirmed").toLowerCase() !== "cancelled" && String(row[1]) === String(reservation.apartmentId) && toDateString_(row[2]) < reservation.checkOut && toDateString_(row[3]) > reservation.checkIn);
+    const conflict = rows.find((row) => String(row[8] || "Confirmed").toLowerCase() !== "cancelled" && normalizeApartmentId_(row[1]) === normalizeApartmentId_(reservation.apartmentId) && toDateString_(row[2]) < reservation.checkOut && toDateString_(row[3]) > reservation.checkIn);
     if (conflict) return json_({ ok: false, error: "Suite is no longer available for those dates.", conflict: bookingRow_(conflict) });
-    const row = [reservationId, String(reservation.apartmentId), String(reservation.checkIn), String(reservation.checkOut), 1, String(reservation.source || "Lizzy"), String(reservation.guestName), optionalAmount_(reservation.deposit), String(reservation.status || "Confirmed"), optionalAmount_(reservation.nightlyRate), optionalAmount_(reservation.totalAmount), String(reservation.notes || "")];
+    const row = [reservationId, normalizeApartmentId_(reservation.apartmentId), String(reservation.checkIn), String(reservation.checkOut), 1, String(reservation.source || "Lizzy"), String(reservation.guestName), optionalAmount_(reservation.deposit), String(reservation.status || "Confirmed"), optionalAmount_(reservation.nightlyRate), optionalAmount_(reservation.totalAmount), String(reservation.notes || "")];
     sheet.appendRow(row); return json_({ ok: true, duplicate: false, reservation: bookingRow_(row) });
   } finally { lock.releaseLock(); }
 }
 
-function bookingRow_(row) { return { id: String(row[0] || ""), apartmentId: String(row[1] || ""), checkIn: toDateString_(row[2]), checkOut: toDateString_(row[3]), status: String(row[8] || "Confirmed"), nightlyRate: row[9] === "" ? null : Number(row[9]), totalAmount: row[10] === "" ? null : Number(row[10]) }; }
+function bookingRow_(row) { return { id: String(row[0] || ""), apartmentId: normalizeApartmentId_(row[1]), checkIn: toDateString_(row[2]), checkOut: toDateString_(row[3]), status: String(row[8] || "Confirmed"), nightlyRate: row[9] === "" ? null : Number(row[9]), totalAmount: row[10] === "" ? null : Number(row[10]) }; }
 function optionalAmount_(value) { return value === null || value === undefined || value === "" ? "" : Number(value); }
 function isValidReservation_(reservation) {
-  if (!reservation || ALLOWED_APARTMENT_IDS.indexOf(String(reservation.apartmentId || "")) < 0 || reservation.apartmentId === "floating") return false;
+  if (!reservation || ALLOWED_APARTMENT_IDS.indexOf(normalizeApartmentId_(reservation.apartmentId)) < 0 || normalizeApartmentId_(reservation.apartmentId) === "floating") return false;
   if (!isDateString_(reservation.checkIn) || !isDateString_(reservation.checkOut) || !reservation.checkIn || !reservation.checkOut || reservation.checkIn >= reservation.checkOut) return false;
   if (!isShortText_(String(reservation.id || "")) || !isShortText_(String(reservation.guestName || "")) || !String(reservation.guestName || "").trim()) return false;
   if (!isShortText_(String(reservation.source || "")) || !isShortText_(String(reservation.notes || ""))) return false;
