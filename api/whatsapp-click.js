@@ -1,4 +1,4 @@
-import { methodNotAllowed, setSecurityHeaders } from "./_auth.js";
+﻿import { applyRateLimitHeaders, checkRateLimit, getClientIp, methodNotAllowed, rateLimited, setSecurityHeaders } from "./_auth.js";
 
 const MAX_TEXT_LENGTH = 500;
 const APARTMENT_IDS = new Set([
@@ -41,6 +41,15 @@ export default async function handler(req, res) {
   setSecurityHeaders(res);
   if (req.method !== "POST") return methodNotAllowed(res, "POST");
 
+  const limit = 20;
+  const rateLimit = checkRateLimit({
+    key: `whatsapp-click:${getClientIp(req)}`,
+    limit,
+    windowMs: 60 * 1000
+  });
+  if (!rateLimit.allowed) return rateLimited(res, rateLimit, limit);
+  applyRateLimitHeaders(res, rateLimit, limit);
+
   const endpoint = process.env.GOOGLE_APPS_SCRIPT_EXEC_URL;
   const sharedSecret = process.env.APPS_SCRIPT_SHARED_SECRET;
   if (!endpoint || !sharedSecret) {
@@ -60,3 +69,4 @@ export default async function handler(req, res) {
 
   return res.status(response.ok ? 200 : 502).json({ ok: response.ok });
 }
+

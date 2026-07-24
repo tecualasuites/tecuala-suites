@@ -1,4 +1,4 @@
-import { methodNotAllowed, setSecurityHeaders } from "./_auth.js";
+﻿import { applyRateLimitHeaders, checkRateLimit, getClientIp, methodNotAllowed, rateLimited, setSecurityHeaders } from "./_auth.js";
 
 const WEBSITE_RATE_CATALOG = {
   "two-bedroom-1": 1500,
@@ -12,6 +12,15 @@ const WEBSITE_RATE_CATALOG = {
 export default async function handler(req, res) {
   setSecurityHeaders(res);
   if (req.method !== "GET") return methodNotAllowed(res, "GET");
+
+  const limit = 120;
+  const rateLimit = checkRateLimit({
+    key: `shared-data:${getClientIp(req)}`,
+    limit,
+    windowMs: 60 * 1000
+  });
+  if (!rateLimit.allowed) return rateLimited(res, rateLimit, limit);
+  applyRateLimitHeaders(res, rateLimit, limit);
 
   const endpoint = process.env.GOOGLE_APPS_SCRIPT_EXEC_URL;
   const sharedSecret = process.env.APPS_SCRIPT_SHARED_SECRET;
@@ -35,3 +44,4 @@ export default async function handler(req, res) {
     return res.status(502).json({ error: "The booking source returned invalid JSON." });
   }
 }
+

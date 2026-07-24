@@ -1,4 +1,4 @@
-import { createHmac, timingSafeEqual } from "node:crypto";
+﻿import { createHmac, timingSafeEqual } from "node:crypto";
 
 export const SESSION_COOKIE = "tecuala_admin_session";
 export const SESSION_TTL_SECONDS = 60 * 60 * 8;
@@ -79,4 +79,51 @@ export function setSecurityHeaders(res) {
 export function methodNotAllowed(res, allowed) {
   res.setHeader("Allow", allowed);
   return res.status(405).json({ error: "Method not allowed" });
+}
+
+const rateLimitBuckets = globalThis.__tecualaRateLimitBuckets || new Map();
+globalThis.__tecualaRateLimitBuckets = rateLimitBuckets;
+
+export function checkRateLimit({ key, limit, windowMs }) {
+  const now = Date.now();
+  const current = rateLimitBuckets.get(key);
+  if (!current || current.resetAt <= now) {
+    const next = { count: 1, resetAt: now + windowMs };
+    rateLimitBuckets.set(key, next);
+    return {
+      allowed: true,
+      remaining: Math.max(limit - 1, 0),
+      resetAt: next.resetAt,
+      retryAfter: 0
+    };
+  }
+
+  if (current.count >= limit) {
+    return {
+      allowed: false,
+      remaining: 0,
+      resetAt: current.resetAt,
+      retryAfter: Math.max(1, Math.ceil((current.resetAt - now) / 1000))
+    };
+  }
+
+  current.count += 1;
+  return {
+    allowed: true,
+    remaining: Math.max(limit - current.count, 0),
+    resetAt: current.resetAt,
+    retryAfter: 0
+  };
+}
+
+export function applyRateLimitHeaders(res, result, limit) {
+  res.setHeader("X-RateLimit-Limit", String(limit));
+  res.setHeader("X-RateLimit-Remaining", String(result.remaining));
+  res.setHeader("X-RateLimit-Reset", String(Math.ceil(result.resetAt / 1000)));
+  if (!result.allowed) res.setHeader("Retry-After", String(result.retryAfter));
+}
+
+export function rateLimited(res, result, limit) {
+  applyRateLimitHeaders(res, result, limit);
+  return res.status(429).json({ error: "Too many requests. Try again later." });
 }

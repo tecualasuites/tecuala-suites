@@ -177,3 +177,17 @@ Then redeploy the Google Apps Script web app and redeploy Vercel.
 - `PUBLIC_WHATSAPP_NUMBER` and `PUBLIC_BUSINESS_EMAIL` are public by nature because they are displayed/used in the browser. They are still configured through environment variables for operational hygiene.
 - The in-memory rate limiter may reset when Vercel starts a new serverless instance. Use durable storage for stronger brute-force protection.
 - LocalStorage admin bookings remain local to the browser and are not a secure database. Shared availability is still controlled by Google Sheets.
+## API Rate Limits
+
+Added shared per-IP rate limiting for endpoints that can create cost, quota pressure, or admin abuse:
+
+- `POST /api/admin/login`: 5 requests per 15 minutes per IP.
+- `POST /api/whatsapp-click`: 20 requests per minute per IP. This protects the Google Apps Script write path and WhatsApp click logging.
+- `GET /api/shared-data`: 120 requests per minute per IP. This protects the Google Apps Script read path and availability feed.
+- `GET /api/admin/session`: 120 requests per minute per IP.
+- `POST /api/admin/logout`: 30 requests per minute per IP.
+
+Rate-limited responses return HTTP `429` with `Retry-After`, `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` headers.
+
+The current limiter is in-memory per Vercel function instance. It is appropriate for this MVP and stops simple abuse, but a durable global limiter such as Vercel Firewall, Upstash Redis, or Vercel KV is recommended if traffic grows or if stronger multi-region enforcement is needed.
+
