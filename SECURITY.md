@@ -117,7 +117,7 @@ The codebase was searched for hardcoded secrets and direct environment leaks usi
 - `script.google`
 - `AKfyc`
 - `523891`
-- `2468`
+- legacy hardcoded PIN values
 - `PASSWORD`
 - `TOKEN`
 - `SECRET`
