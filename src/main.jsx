@@ -129,8 +129,13 @@ const defaultApartments = [
     bathrooms: 1,
     laundryRooms: 1,
     hidden: false,
-    // Change this file in public/images when the real One Bedroom Suite 3 photo is ready.
-    image: "/images/apt-3.svg"
+    image: "/images/apt-3.svg",
+    gallery: [
+      "/images/suite-e-living.jpg",
+      "/images/suite-e-bedroom.jpg",
+      "/images/suite-e-bathroom.jpg",
+      "/images/suite-e-utility.jpg"
+    ]
   },
   {
     id: "one-bedroom-4",
