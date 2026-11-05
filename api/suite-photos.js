@@ -31,7 +31,7 @@ export default async function handler(req, res) {
   const limit = reading ? 120 : 20;
   const rate = checkRateLimit({ key: `suite-photos:${reading}:${getClientIp(req)}`, limit, windowMs: 60_000 });
   if (!rate.allowed) return rateLimited(res, rate, limit);
-  if (!process.env.BLOB_READ_WRITE_TOKEN) {
+  if (!process.env.BLOB_READ_WRITE_TOKEN && !process.env.BLOB_STORE_ID) {
     return reading ? res.json({ photos: {}, enabled: false }) : res.status(503).json({ error: "storage" });
   }
   try {
