@@ -171,16 +171,15 @@ main {
   background: var(--cinnamon);
 }
 
-.location-panel {
-  background: var(--paper);
-}
-
+.location-panel,
 .search-panel {
   background: var(--lincoln);
   border-color: var(--ink);
   color: #ffffff;
 }
 
+.location-panel .section-title,
+.location-panel .section-title p,
 .search-panel .section-title,
 .search-panel label {
   color: inherit;
@@ -217,7 +216,7 @@ main {
 }
 
 .location-panel address {
-  color: var(--ink);
+  color: inherit;
   font-style: normal;
   line-height: 1.45;
 }
@@ -250,7 +249,7 @@ main {
 }
 
 .location-photo figcaption {
-  color: #5b604e;
+  color: inherit;
   font-size: 0.85rem;
   font-weight: 750;
 }
