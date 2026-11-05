@@ -47,8 +47,9 @@ a {
 
 .topbar {
   align-items: center;
-  background: rgba(255, 255, 255, 0.96);
-  border-bottom: 1px solid var(--border);
+  background: var(--lincoln);
+  border-bottom: 1px solid var(--cinnamon);
+  color: var(--lemon);
   display: flex;
   gap: 12px;
   justify-content: space-between;
@@ -89,7 +90,7 @@ p {
 }
 
 .brand a {
-  color: #5b604e;
+  color: inherit;
   display: block;
   font-size: 0.78rem;
   overflow-wrap: anywhere;
@@ -167,6 +168,11 @@ main {
 }
 
 .welcome-panel {
+  background: var(--cinnamon);
+}
+
+.search-panel,
+.location-panel {
   background: var(--lemon);
 }
 
@@ -177,7 +183,7 @@ main {
 }
 
 .welcome-panel p {
-  color: #4f5442;
+  color: var(--ink);
   font-size: 0.98rem;
   line-height: 1.55;
 }
@@ -300,6 +306,19 @@ textarea {
   border-radius: 8px;
   box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
   overflow: hidden;
+}
+
+.apartment-card {
+  background: var(--cinnamon);
+  border-color: var(--cinnamon);
+}
+
+.apartment-card :is(.card-heading p, .facts, .old-price, .total-price, .date-hint) {
+  color: var(--ink);
+}
+
+.apartment-card .sale-price {
+  color: #741e17;
 }
 
 .suite-photo-controls {
