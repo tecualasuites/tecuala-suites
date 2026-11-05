@@ -609,7 +609,7 @@ function App() {
           : 0;
         const available = Math.max(apartment.totalUnits - booked, 0);
         return { ...apartment, booked, available, held };
-      }),
+      }).sort((a, b) => Number(a.available <= 0) - Number(b.available <= 0)),
     [visibleApartments, availabilityBookings, exactSearch, availabilityCheckIn, search.checkOut]
   );
 
@@ -628,9 +628,8 @@ function App() {
   }
 
   function statusFor(apartment) {
-    const row = availabilityRows.find((item) => item.id === apartment.id);
-    if (!row || row.available <= 0) return { label: tr("fullyBooked"), className: "status full" };
-    if (row.available < apartment.totalUnits) return { label: tr("limited"), className: "status limited" };
+    if (apartment.available <= 0) return { label: tr("fullyBooked"), className: "status full" };
+    if (apartment.available < apartment.totalUnits) return { label: tr("limited"), className: "status limited" };
     return { label: tr("available"), className: "status open" };
   }
 
@@ -898,9 +897,9 @@ function App() {
             <h2>{tr("apartments")}</h2>
           </div>
           <div className="apartment-list">
-            {visibleApartments.map((apartment) => {
+            {availabilityRows.map((apartment) => {
               const status = statusFor(apartment);
-              const held = availabilityRows.find((row) => row.id === apartment.id)?.held;
+              const { held } = apartment;
               return (
                 <article className="apartment-card" key={apartment.id}>
                   <ApartmentImage apartment={apartment} language={language} photos={suitePhotos[apartment.id]} tr={tr} />
