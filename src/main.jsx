@@ -30,7 +30,7 @@ const MAPS_URL = `https://www.google.com/maps/search/?api=1&query=${encodeURICom
 const FACEBOOK_URL = "https://www.facebook.com/profile.php?id=61596229950385";
 const MAPS_EMBED_URL = `https://www.google.com/maps?q=${encodeURIComponent(BUSINESS_ADDRESS)}&output=embed`;
 // Replace this file with a real outside/street photo when ready.
-const LOCATION_PHOTO = "/images/location-reference.svg";
+const LOCATION_PHOTO = "/images/location-reference.jpg";
 const SHEET_SUITE_IDS = {
   A: "two-bedroom-1",
   B: "two-bedroom-2",
@@ -1113,7 +1113,7 @@ function App() {
             />
           </div>
           <figure className="location-photo">
-            <img src={LOCATION_PHOTO} alt={tr("locationPhoto")} loading="lazy" />
+            <img src={LOCATION_PHOTO} alt={tr("locationPhoto")} width={2048} height={1536} loading="lazy" />
             <figcaption>{tr("locationPhoto")}</figcaption>
           </figure>
           {publicConfig.businessEmail && (
