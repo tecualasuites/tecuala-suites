@@ -171,14 +171,32 @@ main {
   background: var(--cinnamon);
 }
 
-.search-panel,
 .location-panel {
   background: var(--paper);
 }
 
-.search-panel input,
-.search-panel select {
-  background: #ffffff;
+.search-panel {
+  background: var(--lincoln);
+  border-color: var(--ink);
+  color: #ffffff;
+}
+
+.search-panel .section-title,
+.search-panel label {
+  color: inherit;
+}
+
+.search-panel input {
+  background: transparent;
+  border-color: #ffffff;
+  color: inherit;
+  color-scheme: dark;
+  min-width: 0;
+}
+
+.search-panel input:focus-visible {
+  outline: 2px solid var(--lemon);
+  outline-offset: 2px;
 }
 
 .welcome-panel h2 {
