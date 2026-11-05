@@ -9,6 +9,7 @@ import {
   ChevronRight,
   Download,
   Edit3,
+  ExternalLink,
   Eye,
   EyeOff,
   Home,
@@ -26,6 +27,7 @@ import "./styles.css";
 const BUSINESS_ADDRESS =
   "Luis Donaldo Colosio Murrieta Nte. 389 A, entre Ninos Heroes Oriente, Vicente Guerrero, 63450 Tecuala, Nay., Mexico";
 const MAPS_URL = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(BUSINESS_ADDRESS)}`;
+const FACEBOOK_URL = "https://www.facebook.com/profile.php?id=61596229950385";
 const MAPS_EMBED_URL = `https://www.google.com/maps?q=${encodeURIComponent(BUSINESS_ADDRESS)}&output=embed`;
 // Replace this file with a real outside/street photo when ready.
 const LOCATION_PHOTO = "/images/location-reference.svg";
@@ -163,6 +165,7 @@ const t = {
   openMaps: { en: "Open in Google Maps", es: "Abrir en Google Maps" },
   locationPhoto: { en: "Street reference photo", es: "Foto de referencia" },
   searchTitle: { en: "Find a stay", es: "Buscar estancia" },
+  facebookLink: { en: "Find us on Facebook", es: "Encuéntranos en Facebook" },
   checkIn: { en: "Check-in", es: "Entrada" },
   checkOut: { en: "Check-out", es: "Salida" },
   guests: { en: "Guests", es: "Huéspedes" },
@@ -810,6 +813,11 @@ function App() {
               <p>{tr("welcomeText")}</p>
             </section>
 
+            <div>
+              <a className="secondary-button facebook-link" href={FACEBOOK_URL} target="_blank" rel="noopener noreferrer">
+                {tr("facebookLink")} <ExternalLink size={16} aria-hidden="true" />
+              </a>
+            </div>
             <section id="search" className="search-panel">
           <div className="section-title">
             <Search size={20} />

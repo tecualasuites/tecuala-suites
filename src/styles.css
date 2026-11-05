@@ -145,6 +145,12 @@ p {
   border: 1px solid var(--border);
 }
 
+.facebook-link {
+  background: var(--lincoln);
+  color: var(--lemon);
+  max-width: 100%;
+}
+
 .compact {
   font-size: 0.86rem;
   min-height: 44px;
