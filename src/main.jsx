@@ -83,6 +83,7 @@ const defaultApartments = [
   {
     id: "one-bedroom-1",
     name: { en: "Suite C", es: "Suite C" },
+    unitNumber: 1,
     type: { en: "1 bedroom, 2 beds", es: "1 recámara, 2 camas" },
     totalUnits: 1,
     price: "$900 MXN",
@@ -105,6 +106,7 @@ const defaultApartments = [
   {
     id: "one-bedroom-2",
     name: { en: "Suite D", es: "Suite D" },
+    unitNumber: 4,
     type: { en: "1 bedroom, 2 beds", es: "1 recámara, 2 camas" },
     totalUnits: 1,
     price: "$900 MXN",
@@ -127,6 +129,7 @@ const defaultApartments = [
   {
     id: "one-bedroom-3",
     name: { en: "Suite E", es: "Suite E" },
+    unitNumber: 5,
     type: { en: "1 bedroom, 2 beds", es: "1 recámara, 2 camas" },
     totalUnits: 1,
     price: "$900 MXN",
@@ -894,7 +897,7 @@ function App() {
                   <div className="card-body">
                     <div className="card-heading">
                       <div>
-                        <h3>{getSuiteName(apartment, language)}</h3>
+                        <h3>{getSuiteName(apartment, language)}{apartment.unitNumber && ` ${apartment.unitNumber}`}</h3>
                         <p>{getSuiteType(apartment, language)}</p>
                       </div>
                       <span className={status.className}>{status.label}</span>
