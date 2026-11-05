@@ -1120,7 +1120,7 @@ function App() {
         )}
       </main>
 
-      {!isAdminLoginPage && publicConfig.whatsappNumber && (
+      {!isAdminPage && !isAdminLoginPage && publicConfig.whatsappNumber && (
         <a
           className="whatsapp-float"
           href={`https://wa.me/${publicConfig.whatsappNumber}`}

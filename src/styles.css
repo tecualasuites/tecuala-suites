@@ -24,7 +24,6 @@ html {
 
 body {
   margin: 0;
-  min-width: 320px;
   min-height: 100vh;
 }
 
@@ -42,7 +41,7 @@ a {
 
 .app-shell {
   min-height: 100vh;
-  padding-bottom: 88px;
+  padding-bottom: calc(88px + env(safe-area-inset-bottom));
 }
 
 .topbar {
@@ -55,6 +54,9 @@ a {
   justify-content: space-between;
   left: 0;
   padding: 12px 14px;
+  padding-top: calc(12px + env(safe-area-inset-top));
+  padding-left: max(14px, env(safe-area-inset-left));
+  padding-right: max(14px, env(safe-area-inset-right));
   position: sticky;
   right: 0;
   top: 0;
@@ -145,7 +147,7 @@ p {
 
 .compact {
   font-size: 0.86rem;
-  min-height: 40px;
+  min-height: 44px;
 }
 
 main {
@@ -154,6 +156,8 @@ main {
   margin: 0 auto;
   max-width: 1080px;
   padding: 18px 14px;
+  padding-left: max(14px, env(safe-area-inset-left));
+  padding-right: max(14px, env(safe-area-inset-right));
 }
 
 .welcome-panel,
@@ -219,6 +223,7 @@ main {
   color: inherit;
   font-style: normal;
   line-height: 1.45;
+  overflow-wrap: anywhere;
 }
 
 .map-frame {
@@ -256,6 +261,8 @@ main {
 
 .map-button {
   justify-self: stretch;
+  overflow-wrap: anywhere;
+  text-align: center;
 }
 
 .section-title {
@@ -294,6 +301,7 @@ label {
   font-size: 0.88rem;
   font-weight: 750;
   gap: 7px;
+  min-width: 0;
 }
 
 input,
@@ -303,7 +311,9 @@ textarea {
   border: 1px solid #a49d80;
   border-radius: 8px;
   color: var(--ink);
+  font-size: 1rem;
   min-height: 48px;
+  min-width: 0;
   padding: 11px 12px;
   width: 100%;
 }
@@ -477,7 +487,7 @@ textarea {
   font-weight: 850;
   padding: 6px 8px;
   text-align: center;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
 .status.open {
@@ -766,14 +776,14 @@ textarea {
   align-items: center;
   background: #16a34a;
   border-radius: 999px;
-  bottom: 18px;
+  bottom: calc(18px + env(safe-area-inset-bottom));
   box-shadow: 0 14px 30px rgba(22, 163, 74, 0.36);
   color: #ffffff;
   display: grid;
   height: 58px;
   place-items: center;
   position: fixed;
-  right: 18px;
+  right: calc(18px + env(safe-area-inset-right));
   width: 58px;
   z-index: 25;
 }
@@ -785,14 +795,16 @@ textarea {
 
   main {
     padding: 24px;
+    padding-left: max(24px, env(safe-area-inset-left));
+    padding-right: max(24px, env(safe-area-inset-right));
   }
 
   .search-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .form-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .button-row {
