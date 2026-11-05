@@ -481,7 +481,7 @@ function App() {
       return { ...current, [suite]: next };
     });
   }
-  const [language, setLanguage] = useState(() => localStorage.getItem(STORAGE_KEYS.language) || "es");
+  const [language, setLanguage] = useState(() => localStorage.getItem(STORAGE_KEYS.language) === "en" ? "en" : "es");
   const [apartments, setApartments] = useState(getInitialApartments);
   const [bookings, setBookings] = useState(() => readStorage(STORAGE_KEYS.bookings, []));
   const [sharedBookings, setSharedBookings] = useState([]);
@@ -516,7 +516,10 @@ function App() {
   useEffect(() => writeStorage(STORAGE_KEYS.apartments, apartments), [apartments]);
   useEffect(() => writeStorage(STORAGE_KEYS.bookings, bookings), [bookings]);
   useEffect(() => writeStorage(STORAGE_KEYS.whatsappClicks, whatsappClicks), [whatsappClicks]);
-  useEffect(() => localStorage.setItem(STORAGE_KEYS.language, language), [language]);
+  useEffect(() => {
+    document.documentElement.lang = language;
+    localStorage.setItem(STORAGE_KEYS.language, language);
+  }, [language]);
 
   useEffect(() => {
     let active = true;
