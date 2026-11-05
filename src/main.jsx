@@ -94,6 +94,7 @@ const defaultApartments = [
       "/images/suite-c-kitchen.jpg",
       "/images/suite-c-bathroom.jpg",
       "/images/suite-c-living.jpg",
+      "/images/suite-c-dining.jpg",
       "/images/suite-c-hallway.jpg"
     ]
   },
