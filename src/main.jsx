@@ -211,7 +211,7 @@ const t = {
   laundryRooms: { en: "Washer area", es: "Área de lavado" },
   totalUnits: { en: "Total units", es: "Unidades totales" },
   available: { en: "Available", es: "Disponible" },
-  availableFrom: { en: "Earliest check-in", es: "Llegada a partir del" },
+  occupiedUntil: { en: "Occupied until", es: "Ocupado hasta el" },
   limited: { en: "Limited availability", es: "Disponibilidad limitada" },
   fullyBooked: { en: "Fully booked", es: "Lleno" },
   checkAvailability: { en: "Check Availability", es: "Ver disponibilidad" },
@@ -901,8 +901,20 @@ function App() {
           </div>
           <div className="apartment-list">
             {availabilityRows.map((apartment) => {
+              if (apartment.held) {
+                const holdDate = new Intl.DateTimeFormat(language === "es" ? "es-MX" : "en-US", {
+                  dateStyle: "long", timeZone: "UTC"
+                }).format(new Date(suiteHoldEnd));
+                return (
+                  <article className="apartment-card apartment-card-held" key={apartment.id}>
+                    <div className="card-body">
+                      <div className="card-heading"><h3>{getSuiteName(apartment, language)}</h3></div>
+                      <p>{tr("occupiedUntil")} {holdDate}</p>
+                    </div>
+                  </article>
+                );
+              }
               const status = statusFor(apartment);
-              const { held } = apartment;
               return (
                 <article className="apartment-card" key={apartment.id}>
                   <ApartmentImage apartment={apartment} language={language} photos={suitePhotos[apartment.id]} tr={tr} />
@@ -915,9 +927,6 @@ function App() {
                       <span className={status.className}>{status.label}</span>
                     </div>
                     <div className="facts">
-                      {held && <span>{tr("availableFrom")}: {new Intl.DateTimeFormat(language === "es" ? "es-MX" : "en-US", {
-                        dateStyle: "long", timeZone: "UTC"
-                      }).format(new Date(suiteHoldEnd))}</span>}
                       <PriceDisplay apartment={apartment} tr={tr} nights={nights} />
                       <span>{tr("bathrooms")}: {apartment.bathrooms}</span>
                       <span>{tr("laundryRooms")}: {apartment.laundryRooms}</span>
@@ -926,9 +935,9 @@ function App() {
                       <a className="secondary-button" href="#search">
                         <CalendarDays size={18} /> {tr("checkAvailability")}
                       </a>
-                      {!held && <a className="primary-button" href={whatsappUrl(apartment)} onClick={() => recordWhatsappClick(apartment)}>
+                      <a className="primary-button" href={whatsappUrl(apartment)} onClick={() => recordWhatsappClick(apartment)}>
                         <MessageCircle size={18} /> {tr("bookWhatsapp")}
-                      </a>}
+                      </a>
                     </div>
                   </div>
                 </article>

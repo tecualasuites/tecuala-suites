@@ -607,6 +607,11 @@ textarea {
   color: var(--lemon);
 }
 
+.apartment-card .status.open {
+  background: var(--cinnamon);
+  color: var(--ink);
+}
+
 .facts {
   color: #4f5442;
   display: grid;
@@ -916,6 +921,10 @@ textarea {
   .apartment-card {
     display: grid;
     grid-template-columns: minmax(210px, 0.75fr) 1fr;
+  }
+
+  .apartment-card-held .card-body {
+    grid-column: 1 / -1;
   }
 
   .photo-frame {
