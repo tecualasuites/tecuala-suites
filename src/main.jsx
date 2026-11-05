@@ -31,6 +31,7 @@ const FACEBOOK_URL = "https://www.facebook.com/profile.php?id=61596229950385";
 const MAPS_EMBED_URL = `https://www.google.com/maps?q=${encodeURIComponent(BUSINESS_ADDRESS)}&output=embed`;
 // Replace this file with a real outside/street photo when ready.
 const LOCATION_PHOTO = "/images/location-reference.jpg";
+const SHARED_LIVING_PHOTO = "/images/shared-suite-living.jpg";
 const SHEET_SUITE_IDS = {
   A: "two-bedroom-1",
   B: "two-bedroom-2",
@@ -95,7 +96,8 @@ const defaultApartments = [
       "/images/suite-c-bathroom.jpg",
       "/images/suite-c-living.jpg",
       "/images/suite-c-dining.jpg",
-      "/images/suite-c-hallway.jpg"
+      "/images/suite-c-hallway.jpg",
+      SHARED_LIVING_PHOTO
     ]
   },
   {
@@ -116,7 +118,8 @@ const defaultApartments = [
       "/images/suite-d-bedroom.jpg",
       "/images/suite-d-bathroom.jpg",
       "/images/suite-d-kitchen-window.jpg",
-      "/images/suite-d-utility.jpg"
+      "/images/suite-d-utility.jpg",
+      SHARED_LIVING_PHOTO
     ]
   },
   {
@@ -135,7 +138,8 @@ const defaultApartments = [
       "/images/suite-e-living.jpg",
       "/images/suite-e-bedroom.jpg",
       "/images/suite-e-bathroom.jpg",
-      "/images/suite-e-utility.jpg"
+      "/images/suite-e-utility.jpg",
+      SHARED_LIVING_PHOTO
     ]
   },
   {
