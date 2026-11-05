@@ -355,7 +355,24 @@ textarea {
 }
 
 .apartment-card .sale-price {
-  color: #741e17;
+  color: var(--ink);
+}
+
+.apartment-card :is(.button-row .secondary-button, .photo-enlarge span),
+.apartment-card > div > .photo-navigation .secondary-button {
+  background: var(--cinnamon);
+  border: 1px solid var(--ink);
+  color: var(--ink);
+}
+
+.apartment-card .button-row .primary-button {
+  border: 1px solid var(--ink);
+}
+
+.apartment-card .button-row a:focus-visible,
+.apartment-card > div > .photo-navigation button:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
 }
 
 .suite-photo-controls {
@@ -586,6 +603,11 @@ textarea {
 .status.full {
   background: #fee2e2;
   color: #991b1b;
+}
+
+.apartment-card .status {
+  background: var(--cinnamon);
+  color: var(--ink);
 }
 
 .facts {
