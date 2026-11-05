@@ -1,4 +1,4 @@
-const CACHE_NAME = "tecuala-suites-v6";
+const CACHE_NAME = "tecuala-suites-v7";
 const APP_SHELL = [
   "/",
   "/index.html",
@@ -25,6 +25,9 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
+  const url = new URL(event.request.url);
+  if (url.origin !== self.location.origin || url.pathname.startsWith("/api/") ||
+      /^\/admin(?:\/|$|-login$)/.test(url.pathname)) return;
 
   if (event.request.mode === "navigate") {
     event.respondWith(

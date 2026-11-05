@@ -3,7 +3,7 @@
   "short_name": "Tecuala Suites",
   "start_url": "/",
   "display": "standalone",
-  "theme_color": "#0f172a",
+  "theme_color": "#555832",
   "background_color": "#ffffff",
   "icons": [
     {

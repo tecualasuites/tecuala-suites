@@ -200,6 +200,18 @@ const t = {
   priceSettings: { en: "Suite prices", es: "Precios de suites" },
   regularPrice: { en: "Regular price", es: "Precio regular" },
   discountPrice: { en: "Discount price", es: "Precio con descuento" },
+  suitePhotos: { en: "Suite photos", es: "Fotos de la suite" },
+  uploadPhoto: { en: "Upload photo", es: "Subir foto" },
+  replacePhoto: { en: "Replace", es: "Reemplazar" },
+  removePhoto: { en: "Remove", es: "Eliminar" },
+  confirmRemovePhoto: { en: "Remove this photo?", es: "¿Eliminar esta foto?" },
+  photoLabel: { en: "Photo", es: "Foto" },
+  photoSaving: { en: "Saving photo…", es: "Guardando foto…" },
+  photoSaved: { en: "Photos updated.", es: "Fotos actualizadas." },
+  photoUnavailable: { en: "Photo storage is unavailable.", es: "El almacenamiento de fotos no está disponible." },
+  photoInvalid: { en: "Could not read this photo. Try a JPEG or PNG.", es: "No se pudo leer la foto. Intenta con un archivo JPEG o PNG." },
+  photoFailed: { en: "Could not update photos. Try again.", es: "No se pudieron actualizar las fotos. Intenta de nuevo." },
+  photoSession: { en: "Your session expired. Sign in again.", es: "Tu sesión expiró. Inicia sesión de nuevo." },
   discountHelp: {
     en: "Leave discount blank to show only the regular price.",
     es: "Deja el descuento vacío para mostrar solo el precio regular."
@@ -400,6 +412,33 @@ function sendSharedWhatsappClick(click) {
 }
 
 function App() {
+  const [suitePhotos, setSuitePhotos] = useState({});
+  const [photosEnabled, setPhotosEnabled] = useState(null);
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch("/api/suite-photos", { signal: controller.signal })
+      .then((response) => {
+        if (!response.ok) throw new Error();
+        return response.json();
+      })
+      .then(({ photos, enabled }) => {
+        setSuitePhotos(photos || {});
+        setPhotosEnabled(Boolean(enabled));
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setPhotosEnabled(false);
+      });
+    return () => controller.abort();
+  }, []);
+
+  function updateSuitePhoto(suite, slot, photo) {
+    setSuitePhotos((current) => {
+      const next = { ...current[suite] };
+      if (photo) next[slot] = photo;
+      else delete next[slot];
+      return { ...current, [suite]: next };
+    });
+  }
   const [language, setLanguage] = useState(() => localStorage.getItem(STORAGE_KEYS.language) || "es");
   const [apartments, setApartments] = useState(getInitialApartments);
   const [bookings, setBookings] = useState(() => readStorage(STORAGE_KEYS.bookings, []));
@@ -812,7 +851,7 @@ function App() {
               const status = statusFor(apartment);
               return (
                 <article className="apartment-card" key={apartment.id}>
-                  <ApartmentImage apartment={apartment} language={language} />
+                  <ApartmentImage apartment={apartment} language={language} photos={suitePhotos[apartment.id]} tr={tr} />
                   <div className="card-body">
                     <div className="card-heading">
                       <div>
@@ -944,6 +983,7 @@ function App() {
                               />
                             </label>
                           </div>
+                          <SuitePhotoControls suite={apartment.id} photos={suitePhotos[apartment.id]} enabled={photosEnabled} onChange={updateSuitePhoto} tr={tr} />
                         </article>
                       ))}
                     </div>
@@ -1089,20 +1129,124 @@ function App() {
   );
 }
 
-function ApartmentImage({ apartment, language }) {
-  const [failed, setFailed] = useState(false);
+async function preparePhoto(file) {
+  if (file.size > 30_000_000) throw new Error();
+  const source = URL.createObjectURL(file);
+  try {
+    const img = new Image();
+    img.src = source;
+    await img.decode();
+    const canvas = document.createElement("canvas");
+    const ratio = Math.min(1, 1440 / Math.max(img.naturalWidth, img.naturalHeight));
+    canvas.width = Math.max(1, Math.round(img.naturalWidth * ratio));
+    canvas.height = Math.max(1, Math.round(img.naturalHeight * ratio));
+    const ctx = canvas.getContext("2d", { alpha: false });
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    for (const quality of [0.86, 0.72, 0.55, 0.38]) {
+      const data = canvas.toDataURL("image/jpeg", quality);
+      if (data.startsWith("data:image/jpeg;base64,") && data.length < 800_000) return data.split(",")[1];
+    }
+    throw new Error();
+  } finally {
+    URL.revokeObjectURL(source);
+  }
+}
+
+function SuitePhotoControls({ suite, photos, enabled, onChange, tr }) {
+  const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState("");
+
+  async function update(slot, file) {
+    if (busy || !enabled) return;
+    if (!file && !window.confirm(tr("confirmRemovePhoto"))) return;
+    setBusy(true);
+    setNotice("photoSaving");
+    try {
+      let image;
+      if (file) {
+        try { image = await preparePhoto(file); }
+        catch { setNotice("photoInvalid"); return; }
+      }
+      const response = await fetch("/api/suite-photos", {
+        method: file ? "POST" : "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ suite, slot, image })
+      });
+      if (!response.ok) {
+        setNotice(response.status === 401 ? "photoSession" : response.status === 503 ? "photoUnavailable" : "photoFailed");
+        return;
+      }
+      onChange(suite, slot, (await response.json()).photo);
+      setNotice("photoSaved");
+    } catch {
+      setNotice("photoFailed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="suite-photo-controls">
+      <strong>{tr("suitePhotos")}</strong>
+      {enabled === false && <p>{tr("photoUnavailable")}</p>}
+      <div className="suite-photo-slots">
+        {[1, 2, 3, 4].map((slot) => {
+          const url = photos?.[slot]?.url;
+          return (
+            <div key={slot} className="suite-photo-slot">
+              {url ? <img src={url} alt={`${tr("photoLabel")} ${slot}`} loading="lazy" /> : <span>{tr("photoLabel")} {slot}</span>}
+              <label className="secondary-button photo-picker">
+                {tr(url ? "replacePhoto" : "uploadPhoto")}
+                <input type="file" accept="image/*,.heic,.heif" disabled={!enabled || busy}
+                  aria-label={`${tr(url ? "replacePhoto" : "uploadPhoto")} ${slot}`}
+                  onChange={(event) => {
+                    const file = event.currentTarget.files?.[0];
+                    event.currentTarget.value = "";
+                    if (file) update(slot, file);
+                  }} />
+              </label>
+              {url && <button type="button" className="secondary-button" disabled={busy || !enabled} onClick={() => update(slot)}>{tr("removePhoto")}</button>}
+            </div>
+          );
+        })}
+      </div>
+      <p role="status">{notice && tr(notice)}</p>
+    </div>
+  );
+}
+
+function ApartmentImage({ apartment, language, photos, tr }) {
+  const [failed, setFailed] = useState([]);
+  const [selection, setSelection] = useState(null);
+  const urls = Object.values(photos || {}).map(({ url }) => url);
+  const selected = urls.includes(selection) ? selection : urls[0];
+  const image = selected && !failed.includes(selected) ? selected : apartment.image;
   const suiteName = getSuiteName(apartment, language);
 
   return (
+    <div>
     <div className="photo-frame">
-      {!failed && apartment.image ? (
-        <img src={apartment.image} alt={suiteName} onError={() => setFailed(true)} />
+      {image && !failed.includes(image) ? (
+        <img key={image} src={image} alt={suiteName} loading="lazy" onError={() => setFailed((current) => [...current, image])} />
       ) : (
         <div className="photo-fallback">
           <Home size={28} />
           <span>{suiteName}</span>
         </div>
       )}
+    </div>
+    {urls.length > 1 && (
+      <div className="photo-navigation" aria-label={tr("suitePhotos")}>
+        {urls.map((url, index) => (
+          <button key={url} type="button" className="secondary-button" aria-pressed={url === selected}
+            aria-label={`${tr("photoLabel")} ${index + 1}`} onClick={() => { setFailed([]); setSelection(url); }}>
+            {index + 1}
+          </button>
+        ))}
+      </div>
+    )}
     </div>
   );
 }
