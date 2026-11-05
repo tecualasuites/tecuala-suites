@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { track } from "@vercel/analytics";
 import { Analytics } from "@vercel/analytics/react";
@@ -15,12 +15,14 @@ import {
   Home,
   Languages,
   Lock,
+  Maximize2,
   MessageCircle,
   RefreshCcw,
   Save,
   Search,
   Trash2,
-  Users
+  Users,
+  X
 } from "lucide-react";
 import "./styles.css";
 
@@ -237,6 +239,7 @@ const t = {
   photoLabel: { en: "Photo", es: "Foto" },
   previousPhoto: { en: "Previous photo", es: "Foto anterior" },
   nextPhoto: { en: "Next photo", es: "Foto siguiente" },
+  enlargePhoto: { en: "Enlarge photo", es: "Ampliar foto" },
   photoSaving: { en: "Saving photo…", es: "Guardando foto…" },
   photoSaved: { en: "Photos updated.", es: "Fotos actualizadas." },
   photoUnavailable: { en: "Photo storage is unavailable.", es: "El almacenamiento de fotos no está disponible." },
@@ -1269,11 +1272,27 @@ function SuitePhotoControls({ suite, photos, enabled, onChange, tr }) {
 function ApartmentImage({ apartment, language, photos, tr }) {
   const [failed, setFailed] = useState([]);
   const [selection, setSelection] = useState(null);
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [detailFailed, setDetailFailed] = useState(null);
+  const dialog = useRef(null);
   const urls = [...(apartment.gallery || []), ...Object.values(photos || {}).map(({ url }) => url)];
   const selected = urls.includes(selection) ? selection : urls[0];
   const index = urls.indexOf(selected);
   const image = selected && !failed.includes(selected) ? selected : apartment.image;
   const suiteName = getSuiteName(apartment, language);
+  const detail = apartment.gallery?.includes(selected) && detailFailed !== selected
+    ? selected.replace("/images/", "/images/full/")
+    : selected;
+  const move = (offset) => setSelection(urls[(index + offset + urls.length) % urls.length]);
+  const navigation = urls.length > 1 && (
+    <div className="photo-navigation" aria-label={tr("suitePhotos")}>
+      <button type="button" className="secondary-button" aria-label={tr("previousPhoto")}
+        onClick={() => move(-1)}><ChevronLeft size={18} /></button>
+      <span aria-live="polite">{index + 1} / {urls.length}</span>
+      <button type="button" className="secondary-button" aria-label={tr("nextPhoto")}
+        onClick={() => move(1)}><ChevronRight size={18} /></button>
+    </div>
+  );
 
   return (
     <div>
@@ -1286,16 +1305,34 @@ function ApartmentImage({ apartment, language, photos, tr }) {
           <span>{suiteName}</span>
         </div>
       )}
+      {selected && image === selected && !failed.includes(image) && (
+        <button type="button" className="photo-enlarge" aria-label={`${tr("enlargePhoto")}: ${suiteName}`}
+          onClick={() => { dialog.current.showModal(); setViewerOpen(true); }}>
+          <span><Maximize2 size={18} aria-hidden="true" /></span>
+        </button>
+      )}
     </div>
-    {urls.length > 1 && (
-      <div className="photo-navigation" aria-label={tr("suitePhotos")}>
-        <button type="button" className="secondary-button" aria-label={tr("previousPhoto")}
-          onClick={() => setSelection(urls[(index + urls.length - 1) % urls.length])}><ChevronLeft size={18} /></button>
-        <span aria-live="polite">{index + 1} / {urls.length}</span>
-        <button type="button" className="secondary-button" aria-label={tr("nextPhoto")}
-          onClick={() => setSelection(urls[(index + 1) % urls.length])}><ChevronRight size={18} /></button>
+    {navigation}
+    <dialog ref={dialog} className="photo-dialog" aria-label={`${suiteName}: ${tr("suitePhotos")}`}
+      onClose={() => setViewerOpen(false)}
+      onKeyDown={(event) => {
+        if (urls.length < 2 || !["ArrowLeft", "ArrowRight"].includes(event.key)) return;
+        event.preventDefault();
+        move(event.key === "ArrowLeft" ? -1 : 1);
+      }}>
+      <div className="photo-viewer">
+        <header>
+          <strong>{suiteName}</strong>
+          <button type="button" className="secondary-button" aria-label={tr("close")}
+            onClick={() => dialog.current.close()}><X size={20} /></button>
+        </header>
+        {viewerOpen && detail && (
+          <img key={detail} src={detail} alt={`${suiteName}: ${tr("photoLabel")} ${index + 1}`}
+            onError={detail !== selected ? () => setDetailFailed(selected) : undefined} />
+        )}
+        {navigation}
       </div>
-    )}
+    </dialog>
     </div>
   );
 }
