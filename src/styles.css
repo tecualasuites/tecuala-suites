@@ -346,32 +346,29 @@ textarea {
 }
 
 .apartment-card {
-  background: var(--cinnamon);
-  border-color: var(--cinnamon);
+  background: var(--lincoln);
+  border-color: var(--lincoln);
+  color: #ffffff;
 }
 
-.apartment-card :is(.card-heading p, .facts, .old-price, .total-price, .date-hint) {
-  color: var(--ink);
-}
-
-.apartment-card .sale-price {
-  color: var(--ink);
+.apartment-card :is(.card-heading h3, .card-heading p, .facts, .old-price, .total-price, .date-hint, .sale-price) {
+  color: inherit;
 }
 
 .apartment-card :is(.button-row .secondary-button, .photo-enlarge span),
 .apartment-card > div > .photo-navigation .secondary-button {
-  background: var(--cinnamon);
-  border: 1px solid var(--ink);
-  color: var(--ink);
+  background: var(--lincoln);
+  border: 1px solid var(--lemon);
+  color: #ffffff;
 }
 
 .apartment-card .button-row .primary-button {
-  border: 1px solid var(--ink);
+  border: 1px solid var(--lemon);
 }
 
 .apartment-card .button-row a:focus-visible,
 .apartment-card > div > .photo-navigation button:focus-visible {
-  outline: 2px solid var(--ink);
+  outline: 2px solid var(--lemon);
   outline-offset: 2px;
 }
 
@@ -606,8 +603,8 @@ textarea {
 }
 
 .apartment-card .status {
-  background: var(--cinnamon);
-  color: var(--ink);
+  background: transparent;
+  color: var(--lemon);
 }
 
 .facts {
