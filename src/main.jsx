@@ -51,6 +51,9 @@ const STORAGE_KEYS = {
   whatsappClicks: "tecuala_whatsapp_clicks"
 };
 
+const suiteHoldEnd = "2027-03-05";
+const heldSuiteIds = new Set(["two-bedroom-1", "two-bedroom-2", "one-bedroom-4"]);
+
 const defaultApartments = [
   {
     id: "two-bedroom-1",
@@ -94,11 +97,11 @@ const defaultApartments = [
     hidden: false,
     image: "/images/apt-1.svg",
     gallery: [
-      "/images/suite-c-bedroom.jpg",
-      "/images/suite-c-kitchen.jpg",
-      "/images/suite-c-bathroom.jpg",
       "/images/suite-c-living.jpg",
+      "/images/suite-c-kitchen.jpg",
       "/images/suite-c-dining.jpg",
+      "/images/suite-c-bedroom.jpg",
+      "/images/suite-c-bathroom.jpg",
       "/images/suite-c-hallway.jpg",
       SHARED_LIVING_PHOTO
     ]
@@ -119,9 +122,9 @@ const defaultApartments = [
     gallery: [
       "/images/suite-d-living.jpg",
       "/images/suite-d-kitchen-dining.jpg",
+      "/images/suite-d-kitchen-window.jpg",
       "/images/suite-d-bedroom.jpg",
       "/images/suite-d-bathroom.jpg",
-      "/images/suite-d-kitchen-window.jpg",
       "/images/suite-d-utility.jpg",
       SHARED_LIVING_PHOTO
     ]
@@ -208,6 +211,7 @@ const t = {
   laundryRooms: { en: "Washer area", es: "Área de lavado" },
   totalUnits: { en: "Total units", es: "Unidades totales" },
   available: { en: "Available", es: "Disponible" },
+  availableFrom: { en: "Earliest check-in", es: "Llegada a partir del" },
   limited: { en: "Limited availability", es: "Disponibilidad limitada" },
   fullyBooked: { en: "Fully booked", es: "Lleno" },
   checkAvailability: { en: "Check Availability", es: "Ver disponibilidad" },
@@ -393,6 +397,7 @@ function isValidDateRange(checkIn, checkOut) {
 
 function getBookedUnits(apartmentId, checkIn, checkOut, bookings, ignoreId = null) {
   if (!isValidDateRange(checkIn, checkOut)) return 0;
+  if (heldSuiteIds.has(apartmentId) && checkIn < suiteHoldEnd) return 1;
   return bookings
     .filter((booking) => booking.id !== ignoreId)
     .filter((booking) => booking.apartmentId === apartmentId)
@@ -501,7 +506,9 @@ function App() {
   const tr = (key) => t[key]?.[language] || key;
   const today = todayString();
   const nights = getNightCount(search.checkIn, search.checkOut);
-  const visibleApartments = useMemo(() => apartments.filter((apartment) => !apartment.hidden), [apartments]);
+  const visibleApartments = useMemo(() => apartments.filter((apartment) =>
+    !apartment.hidden || (today < suiteHoldEnd && heldSuiteIds.has(apartment.id))
+  ), [apartments, today]);
   const availabilityBookings = useMemo(() => mergeBookings(bookings, sharedBookings), [bookings, sharedBookings]);
   const dashboardWhatsappClicks = sharedWhatsappClicks.length ? sharedWhatsappClicks : whatsappClicks;
   const dashboardWhatsappClickCount = sharedWhatsappClickCount ?? whatsappClicks.length;
@@ -591,17 +598,19 @@ function App() {
   }, []);
 
   const exactSearch = isValidDateRange(search.checkIn, search.checkOut);
+  const availabilityCheckIn = exactSearch ? search.checkIn : today;
 
   const availabilityRows = useMemo(
     () =>
       visibleApartments.map((apartment) => {
-        const booked = exactSearch
+        const held = heldSuiteIds.has(apartment.id) && availabilityCheckIn < suiteHoldEnd;
+        const booked = held ? apartment.totalUnits : exactSearch
           ? getBookedUnits(apartment.id, search.checkIn, search.checkOut, availabilityBookings)
           : 0;
         const available = Math.max(apartment.totalUnits - booked, 0);
-        return { ...apartment, booked, available };
+        return { ...apartment, booked, available, held };
       }),
-    [visibleApartments, availabilityBookings, exactSearch, search.checkIn, search.checkOut]
+    [visibleApartments, availabilityBookings, exactSearch, availabilityCheckIn, search.checkOut]
   );
 
   function todayString() {
@@ -891,6 +900,7 @@ function App() {
           <div className="apartment-list">
             {visibleApartments.map((apartment) => {
               const status = statusFor(apartment);
+              const held = availabilityRows.find((row) => row.id === apartment.id)?.held;
               return (
                 <article className="apartment-card" key={apartment.id}>
                   <ApartmentImage apartment={apartment} language={language} photos={suitePhotos[apartment.id]} tr={tr} />
@@ -903,6 +913,9 @@ function App() {
                       <span className={status.className}>{status.label}</span>
                     </div>
                     <div className="facts">
+                      {held && <span>{tr("availableFrom")}: {new Intl.DateTimeFormat(language === "es" ? "es-MX" : "en-US", {
+                        dateStyle: "long", timeZone: "UTC"
+                      }).format(new Date(suiteHoldEnd))}</span>}
                       <PriceDisplay apartment={apartment} tr={tr} nights={nights} />
                       <span>{tr("bathrooms")}: {apartment.bathrooms}</span>
                       <span>{tr("laundryRooms")}: {apartment.laundryRooms}</span>
@@ -911,9 +924,9 @@ function App() {
                       <a className="secondary-button" href="#search">
                         <CalendarDays size={18} /> {tr("checkAvailability")}
                       </a>
-                      <a className="primary-button" href={whatsappUrl(apartment)} onClick={() => recordWhatsappClick(apartment)}>
+                      {!held && <a className="primary-button" href={whatsappUrl(apartment)} onClick={() => recordWhatsappClick(apartment)}>
                         <MessageCircle size={18} /> {tr("bookWhatsapp")}
-                      </a>
+                      </a>}
                     </div>
                   </div>
                 </article>
