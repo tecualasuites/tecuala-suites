@@ -5,6 +5,8 @@ import { Analytics } from "@vercel/analytics/react";
 import {
   CalendarDays,
   Check,
+  ChevronLeft,
+  ChevronRight,
   Download,
   Edit3,
   Eye,
@@ -201,11 +203,14 @@ const t = {
   regularPrice: { en: "Regular price", es: "Precio regular" },
   discountPrice: { en: "Discount price", es: "Precio con descuento" },
   suitePhotos: { en: "Suite photos", es: "Fotos de la suite" },
-  uploadPhoto: { en: "Upload photo", es: "Subir foto" },
-  replacePhoto: { en: "Replace", es: "Reemplazar" },
+  uploadPhoto: { en: "Upload photos", es: "Subir fotos" },
+  photoLimited: { en: "Upload limit reached. Wait a minute and select the remaining photos again.", es: "Se alcanzó el límite de carga. Espera un minuto y vuelve a seleccionar las fotos restantes." },
+  photoSkipped: { en: "Some photos could not be read. Try uploading them as JPEG or PNG.", es: "No se pudieron leer algunas fotos. Intenta subirlas como JPEG o PNG." },
   removePhoto: { en: "Remove", es: "Eliminar" },
   confirmRemovePhoto: { en: "Remove this photo?", es: "¿Eliminar esta foto?" },
   photoLabel: { en: "Photo", es: "Foto" },
+  previousPhoto: { en: "Previous photo", es: "Foto anterior" },
+  nextPhoto: { en: "Next photo", es: "Foto siguiente" },
   photoSaving: { en: "Saving photo…", es: "Guardando foto…" },
   photoSaved: { en: "Photos updated.", es: "Fotos actualizadas." },
   photoUnavailable: { en: "Photo storage is unavailable.", es: "El almacenamiento de fotos no está disponible." },
@@ -1157,32 +1162,47 @@ async function preparePhoto(file) {
 function SuitePhotoControls({ suite, photos, enabled, onChange, tr }) {
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
+  const [progress, setProgress] = useState(null);
 
-  async function update(slot, file) {
+  async function update(files, id) {
     if (busy || !enabled) return;
-    if (!file && !window.confirm(tr("confirmRemovePhoto"))) return;
+    if (!files.length && !window.confirm(tr("confirmRemovePhoto"))) return;
     setBusy(true);
     setNotice("photoSaving");
     try {
-      let image;
-      if (file) {
-        try { image = await preparePhoto(file); }
-        catch { setNotice("photoInvalid"); return; }
-      }
-      const response = await fetch("/api/suite-photos", {
-        method: file ? "POST" : "DELETE",
+      const send = (method, data) => fetch("/api/suite-photos", {
+        method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ suite, slot, image })
+        body: JSON.stringify({ suite, ...data })
       });
-      if (!response.ok) {
-        setNotice(response.status === 401 ? "photoSession" : response.status === 503 ? "photoUnavailable" : "photoFailed");
-        return;
+      const errorNotice = (status) => status === 401 ? "photoSession"
+        : status === 429 ? "photoLimited" : status === 503 ? "photoUnavailable" : "photoFailed";
+      if (!files.length) {
+        const response = await send("DELETE", { id });
+        if (!response.ok) { setNotice(errorNotice(response.status)); return; }
+        onChange(suite, id, null);
+      } else {
+        let skipped = 0;
+        for (const [index, file] of files.entries()) {
+          setProgress(`${index + 1}/${files.length}`);
+          let image;
+          try { image = await preparePhoto(file); }
+          catch { skipped++; continue; }
+          const response = await send("POST", { image });
+          if (!response.ok) { setNotice(errorNotice(response.status)); return; }
+          const saved = await response.json();
+          onChange(suite, saved.id, saved.photo);
+        }
+        if (skipped) {
+          setNotice(skipped === files.length ? "photoInvalid" : "photoSkipped");
+          return;
+        }
       }
-      onChange(suite, slot, (await response.json()).photo);
       setNotice("photoSaved");
     } catch {
       setNotice("photoFailed");
     } finally {
+      setProgress(null);
       setBusy(false);
     }
   }
@@ -1191,28 +1211,26 @@ function SuitePhotoControls({ suite, photos, enabled, onChange, tr }) {
     <div className="suite-photo-controls">
       <strong>{tr("suitePhotos")}</strong>
       {enabled === false && <p>{tr("photoUnavailable")}</p>}
+      <label className="secondary-button photo-picker">
+        {tr("uploadPhoto")}
+        <input type="file" multiple accept="image/*,.heic,.heif" disabled={!enabled || busy}
+          onChange={(event) => {
+            const files = Array.from(event.currentTarget.files || []);
+            event.currentTarget.value = "";
+            if (files.length) update(files);
+          }} />
+      </label>
       <div className="suite-photo-slots">
-        {[1, 2, 3, 4].map((slot) => {
-          const url = photos?.[slot]?.url;
-          return (
-            <div key={slot} className="suite-photo-slot">
-              {url ? <img src={url} alt={`${tr("photoLabel")} ${slot}`} loading="lazy" /> : <span>{tr("photoLabel")} {slot}</span>}
-              <label className="secondary-button photo-picker">
-                {tr(url ? "replacePhoto" : "uploadPhoto")}
-                <input type="file" accept="image/*,.heic,.heif" disabled={!enabled || busy}
-                  aria-label={`${tr(url ? "replacePhoto" : "uploadPhoto")} ${slot}`}
-                  onChange={(event) => {
-                    const file = event.currentTarget.files?.[0];
-                    event.currentTarget.value = "";
-                    if (file) update(slot, file);
-                  }} />
-              </label>
-              {url && <button type="button" className="secondary-button" disabled={busy || !enabled} onClick={() => update(slot)}>{tr("removePhoto")}</button>}
-            </div>
-          );
-        })}
+        {Object.entries(photos || {}).map(([id, { url }], index) => (
+          <div key={id} className="suite-photo-slot">
+            <img src={url} alt={`${tr("photoLabel")} ${index + 1}`} loading="lazy" />
+            <button type="button" className="secondary-button" disabled={busy || !enabled}
+              aria-label={`${tr("removePhoto")}: ${tr("photoLabel")} ${index + 1}`}
+              onClick={() => update([], id)}>{tr("removePhoto")}</button>
+          </div>
+        ))}
       </div>
-      <p role="status">{notice && tr(notice)}</p>
+      <p role="status">{notice && tr(notice)}{progress && ` ${progress}`}</p>
     </div>
   );
 }
@@ -1222,6 +1240,7 @@ function ApartmentImage({ apartment, language, photos, tr }) {
   const [selection, setSelection] = useState(null);
   const urls = Object.values(photos || {}).map(({ url }) => url);
   const selected = urls.includes(selection) ? selection : urls[0];
+  const index = urls.indexOf(selected);
   const image = selected && !failed.includes(selected) ? selected : apartment.image;
   const suiteName = getSuiteName(apartment, language);
 
@@ -1239,12 +1258,11 @@ function ApartmentImage({ apartment, language, photos, tr }) {
     </div>
     {urls.length > 1 && (
       <div className="photo-navigation" aria-label={tr("suitePhotos")}>
-        {urls.map((url, index) => (
-          <button key={url} type="button" className="secondary-button" aria-pressed={url === selected}
-            aria-label={`${tr("photoLabel")} ${index + 1}`} onClick={() => { setFailed([]); setSelection(url); }}>
-            {index + 1}
-          </button>
-        ))}
+        <button type="button" className="secondary-button" aria-label={tr("previousPhoto")}
+          onClick={() => setSelection(urls[(index + urls.length - 1) % urls.length])}><ChevronLeft size={18} /></button>
+        <span aria-live="polite">{index + 1} / {urls.length}</span>
+        <button type="button" className="secondary-button" aria-label={tr("nextPhoto")}
+          onClick={() => setSelection(urls[(index + 1) % urls.length])}><ChevronRight size={18} /></button>
       </div>
     )}
     </div>

@@ -1,9 +1,12 @@
+import { randomUUID } from "node:crypto";
 import { del, list, put } from "@vercel/blob";
 import sharp from "sharp";
 import { checkRateLimit, getClientIp, methodNotAllowed, parseCookies, rateLimited, SESSION_COOKIE, setSecurityHeaders, verifySessionToken } from "./_auth.js";
 
 const prefix = "suite-photos/";
-const pathPattern = /^suite-photos\/(two-bedroom-[12]|one-bedroom-[1-4])\/([1-4])\.jpg$/;
+const suitePattern = /^(two-bedroom-[12]|one-bedroom-[1-4])$/;
+const photoIdPattern = /^(?:[1-4]|[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12})$/;
+const pathPattern = /^suite-photos\/([^/]+)\/([^/]+)\.jpg$/;
 const maxEncodedLength = 800_000;
 
 function photo(blob) {
@@ -33,25 +36,33 @@ export default async function handler(req, res) {
   }
   try {
     if (reading) {
-      const { blobs } = await list({ prefix, limit: 100 });
       const photos = {};
+      const blobs = [];
+      let cursor;
+      do {
+        const page = await list({ prefix, limit: 100, cursor });
+        blobs.push(...page.blobs);
+        cursor = page.hasMore ? page.cursor : undefined;
+      } while (cursor);
+      blobs.sort((a, b) => new Date(a.uploadedAt) - new Date(b.uploadedAt));
       for (const blob of blobs) {
         const match = pathPattern.exec(blob.pathname);
         if (!match) continue;
-        const [, suite, slot] = match;
-        (photos[suite] ??= {})[slot] = photo(blob);
+        const [, suite, id] = match;
+        if (!suitePattern.test(suite) || !photoIdPattern.test(id)) continue;
+        (photos[suite] ??= {})[id] = photo(blob);
       }
       res.setHeader("Cache-Control", "public, max-age=0, must-revalidate");
       res.setHeader("Vercel-CDN-Cache-Control", "public, s-maxage=15");
       return res.json({ photos, enabled: true });
     }
-    const { suite, slot, image } = req.body || {};
-    const path = `${prefix}${suite}/${slot}.jpg`;
-    if (typeof suite !== "string" || !Number.isInteger(slot) || !pathPattern.test(path)) {
-      return res.status(400).json({ error: "slot" });
+    const { suite, id, image } = req.body || {};
+    if (typeof suite !== "string" || !suitePattern.test(suite)) {
+      return res.status(400).json({ error: "suite" });
     }
     if (req.method === "DELETE") {
-      await del(path);
+      if (typeof id !== "string" || !photoIdPattern.test(id)) return res.status(400).json({ error: "photo" });
+      await del(`${prefix}${suite}/${id}.jpg`);
       return res.json({ photo: null });
     }
     if (typeof image !== "string" || image.length > maxEncodedLength || !/^[A-Za-z0-9+/]+={0,2}$/.test(image)) {
@@ -66,10 +77,11 @@ export default async function handler(req, res) {
     } catch {
       return res.status(400).json({ error: "image" });
     }
-    const blob = await put(path, jpeg, {
-      access: "public", contentType: "image/jpeg", allowOverwrite: true, cacheControlMaxAge: 60
+    const photoId = randomUUID();
+    const blob = await put(`${prefix}${suite}/${photoId}.jpg`, jpeg, {
+      access: "public", contentType: "image/jpeg", addRandomSuffix: false, cacheControlMaxAge: 60
     });
-    return res.json({ photo: photo({ ...blob, uploadedAt: new Date() }) });
+    return res.json({ id: photoId, photo: photo({ ...blob, uploadedAt: new Date() }) });
   } catch {
     return res.status(502).json({ error: "storage" });
   }

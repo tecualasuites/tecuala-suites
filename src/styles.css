@@ -368,14 +368,12 @@ textarea {
   min-width: 0;
 }
 
-.suite-photo-slot img,
-.suite-photo-slot > span {
+.suite-photo-slot img {
   aspect-ratio: 16 / 10;
   background: var(--lemon);
   border-radius: 6px;
-  display: grid;
+  display: block;
   object-fit: cover;
-  place-items: center;
   width: 100%;
 }
 
@@ -403,18 +401,15 @@ textarea {
 }
 
 .photo-navigation {
+  align-items: center;
   display: flex;
   gap: 6px;
+  justify-content: center;
   padding: 8px 14px 0;
 }
 
 .photo-navigation button {
   min-width: 44px;
-}
-
-.photo-navigation button[aria-pressed="true"] {
-  background: var(--lincoln);
-  color: var(--lemon);
 }
 
 .photo-frame {
