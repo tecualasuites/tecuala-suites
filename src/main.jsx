@@ -88,8 +88,14 @@ const defaultApartments = [
     bathrooms: 1,
     laundryRooms: 1,
     hidden: false,
-    // Change this file in public/images when the real One Bedroom Suite 1 photo is ready.
-    image: "/images/apt-1.svg"
+    image: "/images/apt-1.svg",
+    gallery: [
+      "/images/suite-c-bedroom.jpg",
+      "/images/suite-c-kitchen.jpg",
+      "/images/suite-c-bathroom.jpg",
+      "/images/suite-c-living.jpg",
+      "/images/suite-c-hallway.jpg"
+    ]
   },
   {
     id: "one-bedroom-2",
@@ -1246,7 +1252,7 @@ function SuitePhotoControls({ suite, photos, enabled, onChange, tr }) {
 function ApartmentImage({ apartment, language, photos, tr }) {
   const [failed, setFailed] = useState([]);
   const [selection, setSelection] = useState(null);
-  const urls = Object.values(photos || {}).map(({ url }) => url);
+  const urls = [...(apartment.gallery || []), ...Object.values(photos || {}).map(({ url }) => url)];
   const selected = urls.includes(selection) ? selection : urls[0];
   const index = urls.indexOf(selected);
   const image = selected && !failed.includes(selected) ? selected : apartment.image;
@@ -1254,7 +1260,7 @@ function ApartmentImage({ apartment, language, photos, tr }) {
 
   return (
     <div>
-    <div className="photo-frame">
+    <div className={apartment.gallery?.includes(image) ? "photo-frame photo-frame-full" : "photo-frame"}>
       {image && !failed.includes(image) ? (
         <img key={image} src={image} alt={suiteName} loading="lazy" onError={() => setFailed((current) => [...current, image])} />
       ) : (

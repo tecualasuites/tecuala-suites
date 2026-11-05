@@ -441,6 +441,15 @@ textarea {
   width: 100%;
 }
 
+.photo-frame.photo-frame-full {
+  aspect-ratio: 16 / 10;
+  background: var(--ink);
+}
+
+.photo-frame-full img {
+  object-fit: contain;
+}
+
 .photo-fallback {
   align-items: center;
   background: var(--lincoln);
