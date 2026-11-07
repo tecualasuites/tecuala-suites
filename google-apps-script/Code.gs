@@ -56,10 +56,8 @@ function doGet(e) {
       status: String(row[8] || "Confirmed")
     }))
     .filter((booking) => booking.status !== "Cancelled");
-  const whatsappClicks = clickRows.slice(1)
+  const allWhatsappClicks = clickRows.slice(1)
     .filter((row) => row[0] && row[1])
-    .slice(-25)
-    .reverse()
     .map((row) => ({
       id: String(row[0]),
       clickedAt: toIsoString_(row[1]),
@@ -70,12 +68,32 @@ function doGet(e) {
       checkOut: toDateString_(row[6]),
       guests: String(row[7] || "")
     }));
+  const today = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd");
+  const last7Start = dateDaysAgo_(6);
+  const last30Start = dateDaysAgo_(29);
+  const clickMetrics = allWhatsappClicks.reduce((metrics, click) => {
+    const clickDate = clickDateString_(click.clickedAt);
+    if (clickDate === today) metrics.today += 1;
+    if (clickDate && clickDate >= last7Start) metrics.last7Days += 1;
+    if (clickDate && clickDate >= last30Start) metrics.last30Days += 1;
+    const key = click.apartmentId || "unknown";
+    metrics.byApartment[key] = (metrics.byApartment[key] || 0) + 1;
+    return metrics;
+  }, { today: 0, last7Days: 0, last30Days: 0, byApartment: {} });
+  const whatsappClicks = allWhatsappClicks.slice(-25).reverse();
 
   return ContentService
     .createTextOutput(JSON.stringify({
       updatedAt: new Date().toISOString(),
       bookings,
-      whatsappClickCount: Math.max(clickRows.length - 1, 0),
+      whatsappClickCount: allWhatsappClicks.length,
+      whatsappClickMetrics: {
+        total: allWhatsappClicks.length,
+        today: clickMetrics.today,
+        last7Days: clickMetrics.last7Days,
+        last30Days: clickMetrics.last30Days,
+        byApartment: clickMetrics.byApartment
+      },
       whatsappClicks
     }))
     .setMimeType(ContentService.MimeType.JSON);
@@ -188,6 +206,19 @@ function toIsoString_(value) {
     return value.toISOString();
   }
   return String(value || "");
+}
+
+function clickDateString_(value) {
+  if (!value) return "";
+  const date = value instanceof Date ? value : new Date(value);
+  if (isNaN(date.getTime())) return "";
+  return Utilities.formatDate(date, Session.getScriptTimeZone(), "yyyy-MM-dd");
+}
+
+function dateDaysAgo_(days) {
+  const date = new Date();
+  date.setDate(date.getDate() - days);
+  return Utilities.formatDate(date, Session.getScriptTimeZone(), "yyyy-MM-dd");
 }
 
 function json_(data) {
