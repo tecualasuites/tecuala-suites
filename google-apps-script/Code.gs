@@ -1,5 +1,6 @@
 const BOOKINGS_SHEET = "Bookings";
 const CLICKS_SHEET = "WhatsAppClicks";
+const MAINTENANCE_SHEET = "Maintenance";
 const SHARED_SECRET_PROPERTY = "APPS_SCRIPT_SHARED_SECRET";
 const MAX_TEXT_LENGTH = 500;
 const ALLOWED_APARTMENT_IDS = [
@@ -25,6 +26,7 @@ const HEADERS = [
   "totalAmount",
   "notes"
 ];
+const MAINTENANCE_HEADERS = ["id", "apartmentId", "date", "category", "description", "status", "cost", "notes"];
 const CLICK_HEADERS = [
   "id",
   "clickedAt",
@@ -85,6 +87,9 @@ function doPost(e) {
   try {
     const payload = JSON.parse((e.postData && e.postData.contents) || "{}");
     if (!isAuthorized_(payload.token)) return json_({ ok: false, error: "Unauthorized" });
+    if (payload.action === "getSchema") return schemaResponse_();
+    if (payload.action === "readBusinessData") return readBusinessData_();
+    if (payload.action === "appendColumns") return appendColumns_(payload);
     if (payload.action === "whatsappClick" && isValidClick_(payload.click)) {
       const click = payload.click;
       getClicksSheet_().appendRow([String(click.id || Utilities.getUuid()), click.clickedAt ? new Date(click.clickedAt) : new Date(), String(click.pageUrl || ""), String(click.suiteName || ""), String(click.apartmentId || ""), String(click.checkIn || ""), String(click.checkOut || ""), String(click.guests || "")]);
@@ -95,6 +100,70 @@ function doPost(e) {
   } catch (error) { return json_({ ok: false, error: String(error) }); }
 }
 
+function sheetHeaders_(sheetName) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
+  if (!sheet || sheet.getLastRow() === 0 || sheet.getLastColumn() === 0) return [];
+  return sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map((value) => String(value || "").trim());
+}
+
+function schemaResponse_() {
+  return json_({ ok: true, updatedAt: new Date().toISOString(), headers: { Bookings: sheetHeaders_(BOOKINGS_SHEET), Maintenance: sheetHeaders_(MAINTENANCE_SHEET) } });
+}
+
+function rowsAsObjects_(sheetName) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
+  if (!sheet || sheet.getLastRow() < 2 || sheet.getLastColumn() === 0) return [];
+  const values = sheet.getDataRange().getValues();
+  const headers = values[0].map((value) => String(value || "").trim());
+  return values.slice(1).filter((row) => row.some((value) => value !== "")).map((row) => {
+    const result = {};
+    headers.forEach((header, index) => {
+      if (!header) return;
+      const value = row[index];
+      if (value instanceof Date) result[header] = /date|checkin|checkout/i.test(header) ? toDateString_(value) : toIsoString_(value);
+      else result[header] = value === undefined ? "" : value;
+    });
+    if (result.apartmentId) result.apartmentId = normalizeApartmentId_(result.apartmentId);
+    return result;
+  });
+}
+
+function readBusinessData_() {
+  return json_({ ok: true, updatedAt: new Date().toISOString(), headers: { Bookings: sheetHeaders_(BOOKINGS_SHEET), Maintenance: sheetHeaders_(MAINTENANCE_SHEET) }, reservations: rowsAsObjects_(BOOKINGS_SHEET), maintenance: rowsAsObjects_(MAINTENANCE_SHEET) });
+}
+
+function appendColumns_(payload) {
+  const sheetName = payload.sheet === BOOKINGS_SHEET || payload.sheet === MAINTENANCE_SHEET ? payload.sheet : "";
+  const columns = Array.isArray(payload.columns) ? payload.columns : [];
+  const expectedHeaders = Array.isArray(payload.expectedHeaders) ? payload.expectedHeaders.map(String) : [];
+  if (!sheetName || !columns.length || columns.length > 20 || !isShortText_(String(payload.idempotencyKey || ""))) return json_({ ok: false, error: "Invalid append-only schema request." });
+  const normalizedColumns = columns.map((column) => ({ name: String(column && column.name || "").trim(), purpose: String(column && column.purpose || "").trim() }));
+  if (normalizedColumns.some((column) => !/^[A-Za-z][A-Za-z0-9 _-]{0,63}$/.test(column.name) || !column.purpose || column.purpose.length > MAX_TEXT_LENGTH || /^[=+\-@]/.test(column.name))) return json_({ ok: false, error: "Every column needs a safe name and purpose." });
+  const lock = LockService.getScriptLock(); lock.waitLock(15000);
+  try {
+    const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+    let sheet = spreadsheet.getSheetByName(sheetName);
+    if (!sheet) {
+      if (sheetName !== MAINTENANCE_SHEET || expectedHeaders.length) return json_({ ok: false, error: "Sheet state changed. Review current schema and propose again." });
+      sheet = spreadsheet.insertSheet(MAINTENANCE_SHEET);
+      sheet.appendRow(MAINTENANCE_HEADERS);
+      sheet.setFrozenRows(1);
+      sheet.getRange(1, 1, 1, MAINTENANCE_HEADERS.length).setFontWeight("bold");
+    }
+    const current = sheetHeaders_(sheetName);
+    if (current.join("\u001f") !== expectedHeaders.join("\u001f") && !(sheetName === MAINTENANCE_SHEET && expectedHeaders.length === 0 && current.join("\u001f") === MAINTENANCE_HEADERS.join("\u001f"))) return json_({ ok: false, error: "Sheet headers changed after approval. Review the latest headers and confirm a new proposal." });
+    const existing = {};
+    current.forEach((header) => existing[header.toLowerCase()] = true);
+    const added = []; const skipped = [];
+    normalizedColumns.forEach((column) => {
+      if (existing[column.name.toLowerCase()]) { skipped.push(column.name); return; }
+      const nextColumn = sheet.getLastColumn() + 1;
+      sheet.getRange(1, nextColumn).setValue(column.name).setFontWeight("bold").setNote(column.purpose);
+      existing[column.name.toLowerCase()] = true; added.push(column.name);
+    });
+    return json_({ ok: true, duplicate: added.length === 0, added, skipped, headers: sheetHeaders_(sheetName), idempotencyKey: String(payload.idempotencyKey) });
+  } finally { lock.releaseLock(); }
+}
 function normalizeApartmentId_(value) {
   const raw = String(value || "").trim();
   const legacy = { A: "two-bedroom-1", B: "two-bedroom-2", C: "one-bedroom-1", D: "one-bedroom-2", E: "one-bedroom-3", F: "one-bedroom-4" };
